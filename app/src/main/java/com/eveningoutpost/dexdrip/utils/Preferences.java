@@ -63,7 +63,7 @@ import com.eveningoutpost.dexdrip.ParakeetHelper;
 import com.eveningoutpost.dexdrip.R;
 import com.eveningoutpost.dexdrip.UtilityModels.PersistentStore;
 import com.eveningoutpost.dexdrip.alert.Registry;
-import com.eveningoutpost.dexdrip.processing.rlprocessing.ModelApi;
+import com.eveningoutpost.dexdrip.processing.rlprocessing.Calculations;
 import com.eveningoutpost.dexdrip.services.ActivityRecognizedService;
 import com.eveningoutpost.dexdrip.services.BluetoothGlucoseMeter;
 import com.eveningoutpost.dexdrip.services.DexCollectionService;
@@ -123,6 +123,7 @@ import com.nightscout.core.barcode.NSBarcodeConfig;
 
 import net.tribe7.common.base.Joiner;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.text.DecimalFormat;
@@ -2483,7 +2484,17 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
                     Log.d(TAG, "File path: " + path);
 
                     PersistentStore.setString(Constants.RL_MODEL_FILE_PATH, path);
-                    ModelApi.getInstance().importModel(uri);
+                    try {
+                        Calculations.getInstance().importModel(uri);
+                    }
+                    catch (IOException IOE) {
+                        Log.e(TAG, "Error importing model: " + IOE);
+                        JoH.static_toast_long("File not found.");
+                    }
+                    catch (Calculations.ModelLoadException MLE){
+                        Log.e(TAG, "Error importing model: " + MLE);
+                        JoH.static_toast_long("Model load error.");
+                    }
                 }
             }
         }

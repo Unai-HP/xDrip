@@ -35,6 +35,7 @@ import com.eveningoutpost.dexdrip.Models.Treatments;
 import com.eveningoutpost.dexdrip.Models.UserError;
 import com.eveningoutpost.dexdrip.R;
 import com.eveningoutpost.dexdrip.processing.rlprocessing.Calculations;
+import com.eveningoutpost.dexdrip.processing.rlprocessing.RLModel;
 import com.eveningoutpost.dexdrip.services.ActivityRecognizedService;
 import com.eveningoutpost.dexdrip.calibrations.CalibrationAbstract;
 import com.eveningoutpost.dexdrip.calibrations.PluggableCalibration;
@@ -1664,8 +1665,6 @@ public class BgGraphBuilder {
 
 
                 try {
-
-
                     // we need to check we actually have sufficient data for this
                     double predictedbg = -1000;
                     BgReading mylastbg = bgReadings.get(0);
@@ -1885,21 +1884,24 @@ public class BgGraphBuilder {
         String insulinDisplayed = "";
         // Check if RL is enabled
         if (prediction_enabled && rl_simulation_enabled) {
+
             // Uses RL model to predict BG
             try {
-                float calculated_insulin = Calculations.calculateInsulin();
-
-                // Round insulin needed to 2 decimal places
-                //DecimalFormat df = new DecimalFormat();
-                //df.setMaximumFractionDigits(2);
-                //calculated_insulin = Float.parseFloat(df.format(calculated_insulin));
-
+                float calculated_insulin = Calculations.getInstance().calculateInsulin();
                 insulinDisplayed =  "insulin(RL): " + calculated_insulin;
-            } catch (Exception e) {
+            }
+            catch (Calculations.ModelLoadException e) {
                 Log.e(TAG, "Exception doing RL prediction: " + e);
+                JoH.static_toast_long("Model file load error");
+                insulinDisplayed =  "insulin(RL): " + "error";
+            }
+            catch (RLModel.InferErrorException e) {
+                Log.e(TAG, "Exception doing RL prediction: " + e);
+                JoH.static_toast_long("Inference error");
                 insulinDisplayed =  "insulin(RL): " + "error";
             }
         }
+
 
         keyStore.putS("rl_insulin_need", insulinDisplayed);
         Home.updateStatusLine("insRL", insulinDisplayed);
