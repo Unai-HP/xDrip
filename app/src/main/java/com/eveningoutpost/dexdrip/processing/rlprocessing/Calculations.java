@@ -76,7 +76,7 @@ public class Calculations {
     }
 
     /** Gets all the data needed for the RL model from other classes. */
-    private static RLModel.RLInput getRLInput() {
+    private RLModel.RLInput getRLInput() {
         // For now this data is only used for inference, and not retraining/fine tuning to a user. This only requires the latest data.
         List<BgReading> bgReadings = BgReading.latest(1); // TODO: get the number of bg readings using timestamps.
 
