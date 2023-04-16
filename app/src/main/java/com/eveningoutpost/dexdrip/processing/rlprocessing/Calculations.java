@@ -35,7 +35,7 @@ public class Calculations {
     // The assign path to copy of the model file in the app's private storage.
     private final String tflite_inputstream_path = xdrip.getAppContext().getFilesDir().getAbsolutePath() + "/model.tflite";
 
-    RLModel model;
+    private RLModel model;
 
     public Calculations() throws ModelLoadException {
         loadModel();
