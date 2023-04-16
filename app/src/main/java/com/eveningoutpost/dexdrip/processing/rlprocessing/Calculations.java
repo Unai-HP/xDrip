@@ -116,8 +116,6 @@ public class Calculations {
     /**
      * Given a file uri, copies the file to the app's private storage and loads the model.
      * @param uri Uri of the file to import. Uri is obtained from androids file picker.
-     * @throws IOException
-     * @throws ModelLoadException
      */
     public void importModel(Uri uri) throws IOException, ModelLoadException {
         InputStream stream = xdrip.getAppContext().getContentResolver().openInputStream(uri);
@@ -133,7 +131,6 @@ public class Calculations {
      * Used to copy the model file from the inputstream to the app's private storage.
      * @param in InputStream to read from.
      * @param out OutputStream to write to.
-     * @throws IOException
      */
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
