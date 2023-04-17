@@ -19,6 +19,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 
 public class Calculations {
@@ -37,7 +40,7 @@ public class Calculations {
 
     private RLModel model;
 
-    public Calculations() throws ModelLoadException {
+    private Calculations() throws ModelLoadException {
         loadModel();
     }
 
@@ -71,20 +74,29 @@ public class Calculations {
      * @return Needed insulin.
      */
     public float calculateInsulin() throws ModelLoadException, RLModel.InferErrorException {
-        RLModel.RLInput input = getRLInput();
+        RLModel.RLInput input = getRLInput(1);
         return model.inferInsulin(input);
     }
 
     /** Gets all the data needed for the RL model from other classes. */
-    private RLModel.RLInput getRLInput() {
-        // For now this data is only used for inference, and not retraining/fine tuning to a user. This only requires the latest data.
-        List<BgReading> bgReadings = BgReading.latest(1); // TODO: get the number of bg readings using timestamps.
+    private RLModel.RLInput getRLInput(int size) {
+        List<BgReading> bgreadings = BgReading.latest(size);
 
-        // Get the latest BG timestamp to get its treatments.
-        BgReading bgReading = bgReadings.get(0);
-        List<Treatments> treatments = Treatments.listByTimestamp(bgReading.timestamp); // TODO: get the number of treatments using timestamps.
+        ArrayList<RLModel.RLInput.DataPoint> dataPoints = new ArrayList<>();
 
-        return new RLModel.RLInput(treatments, bgReadings);
+        for (BgReading bgreading : bgreadings) {
+            RLModel.RLInput.DataPoint dataPoint = new RLModel.RLInput.DataPoint();
+            dataPoint.bgreading = (float) bgreading.calculated_value;
+            dataPoint.timestamp = bgreading.timestamp;
+            Treatments treatment = Treatments.byTimestamp(bgreading.timestamp);
+            if (treatment != null) {
+                dataPoint.carbs = (float) treatment.carbs;
+                dataPoint.insulin = (float) treatment.insulin;
+            }
+            dataPoints.add(dataPoint);
+        }
+
+        return new RLModel.RLInput(dataPoints);
     }
 
     // ------------------ Model Importing ------------------
