@@ -1864,7 +1864,7 @@ public class BgGraphBuilder {
                     Log.e(TAG, "Exception doing iob values in bggraphbuilder: " + e.toString());
                 }
 
-                // TODO move this lower down
+
                 // Use Reinforcement Learning option to predict insulin needs
                 try { rl_prediction(); }
                 catch (Exception e) {

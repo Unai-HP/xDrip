@@ -1,24 +1,11 @@
 package com.eveningoutpost.dexdrip.processing.rlprocessing;
 
-import android.net.Uri;
 import android.util.Log;
-
-import com.eveningoutpost.dexdrip.Models.BgReading;
-import com.eveningoutpost.dexdrip.Models.Treatments;
-import com.eveningoutpost.dexdrip.xdrip;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.tensorflow.lite.Interpreter;
 
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RLModel {
@@ -58,7 +45,7 @@ public class RLModel {
      * Using historical BG data, calculate the basal insulin.
      * @return Calculated needed basal insulin.
      */
-    public Double inferBasal(RLInput input) throws InferErrorException {
+    public float inferBasal(RLInput input) throws InferErrorException {
         if (interpreter == null) {
             Log.e(TAG, "Model not loaded.");
         }
@@ -76,9 +63,10 @@ public class RLModel {
             throw new InferErrorException("RL model not loaded.");
         }
 
+        float[] input_data = new float[]{input.getLatestBG()};
         float[][] output_data = new float[1][1];
 
-        try { interpreter.run(input.getInputData(), output_data); }
+        try { interpreter.run(input_data, output_data); }
         catch (Exception e) {
             Log.e(TAG, "Error running the model:" + e.getMessage());
             throw new InferErrorException("RL model running failed.");
@@ -109,19 +97,21 @@ public class RLModel {
 
     /** This class formats the data obtained from the historical data from other classes and convert them to a easily used wrapper. */
     public static class RLInput {
-        float[] bg_data; // All bg values in the last X hours.
-        float[] carbs_data; // All carbs values in the last X hours.
-        float[] insulin_data; // All insulin values in the last X hours.
+        ArrayList<DataPoint> dataPoints;
 
-        public RLInput(List<Treatments> treatments, List<BgReading> bgreadings) {
-            // For now the model only uses the lastest BG value to do the inference.
-            bg_data = new float[1];
-            bg_data[0] = (float) bgreadings.get(0).calculated_value;
+        static class DataPoint {
+            public float bgreading;
+            public float insulin;            public float carbs;
+            public long timestamp;
         }
 
-        public float[] getInputData() {
+        public RLInput(List<DataPoint> dataPoints) {
+            this.dataPoints = new ArrayList<>(dataPoints);
+        }
+
+        public float getLatestBG() {
             // input: [bg_in_float]
-            return bg_data;
+            return dataPoints.get(0).bgreading;
         }
     }
 }
