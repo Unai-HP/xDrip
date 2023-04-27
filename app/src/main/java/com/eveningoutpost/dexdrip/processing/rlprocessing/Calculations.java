@@ -3,8 +3,8 @@ package com.eveningoutpost.dexdrip.processing.rlprocessing;
 import android.net.Uri;
 import android.util.Log;
 
-import com.eveningoutpost.dexdrip.Models.BgReading;
-import com.eveningoutpost.dexdrip.Models.Treatments;
+import com.eveningoutpost.dexdrip.models.BgReading;
+import com.eveningoutpost.dexdrip.models.Treatments;
 import com.eveningoutpost.dexdrip.xdrip;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -20,8 +20,6 @@ import java.io.OutputStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
 import java.util.List;
 
 public class Calculations {
