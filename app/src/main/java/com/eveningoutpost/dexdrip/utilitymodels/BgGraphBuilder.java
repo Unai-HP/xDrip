@@ -139,10 +139,7 @@ public class BgGraphBuilder {
     private int predictivehours = 0;
     private boolean prediction_enabled = false;
     private boolean simulation_enabled = false;
-
-    // Used to determine if RL option is to be used to predict BG
-    private boolean rl_simulation_enabled = false;
-
+    private boolean rl_simulation_enabled = false; // Used to determine if RL option is to be used to predict BG
     private static double avg1value = 0;
     private static double avg2value = 0;
     private static int avg1counter = 0;
@@ -660,11 +657,6 @@ public class BgGraphBuilder {
         return previewLineData;
     }
 
-    /**
-     * Creates lines with all activity (bg values, calibration, annotations...) data that the graph should display.
-     * @param simple
-     * @return List of lines (values) to be displayed on the graph.
-     */
     public synchronized List<Line> defaultLines(boolean simple) {
         List<Line> lines = new ArrayList<Line>();
         try {
@@ -1663,8 +1655,6 @@ public class BgGraphBuilder {
                     readings_lock.unlock();
                 }
 
-
-
                 try {
                     // we need to check we actually have sufficient data for this
                     double predictedbg = -1000;
@@ -1866,7 +1856,7 @@ public class BgGraphBuilder {
 
 
                 // Use Reinforcement Learning option to predict insulin needs
-                try { rl_prediction(); }
+                try { rl_action(); }
                 catch (Exception e) {
                     Log.e(TAG, "Exception in RL prediction: " + e.toString());
                 }
@@ -1881,7 +1871,7 @@ public class BgGraphBuilder {
      * If RL is enabled it will call the RL model and then calculate the insulin needed
      * It will update Home's status line with the needed insulin
      */
-    private void rl_prediction() {
+    private void rl_action() {
         String insulinDisplayed = "";
         // Check if RL is enabled
         if (prediction_enabled && rl_simulation_enabled) {

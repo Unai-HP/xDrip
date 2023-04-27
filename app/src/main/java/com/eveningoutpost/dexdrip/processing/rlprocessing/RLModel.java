@@ -101,7 +101,8 @@ public class RLModel {
 
         static class DataPoint {
             public float bgreading;
-            public float insulin;            public float carbs;
+            public float insulin;
+            public float carbs;
             public long timestamp;
         }
 
@@ -110,7 +111,6 @@ public class RLModel {
         }
 
         public float getLatestBG() {
-            // input: [bg_in_float]
             return dataPoints.get(0).bgreading;
         }
     }
