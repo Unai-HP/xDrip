@@ -1,7 +1,11 @@
 package com.eveningoutpost.dexdrip.processing.rlprocessing;
 
+import android.content.ContentResolver;
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+
+import androidx.annotation.VisibleForTesting;
 
 import com.eveningoutpost.dexdrip.models.BgReading;
 import com.eveningoutpost.dexdrip.models.Treatments;
@@ -17,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -36,13 +41,10 @@ public class Calculations {
     // The assign path to copy of the model file in the app's private storage.
     private final String tflite_inputstream_path = xdrip.getAppContext().getFilesDir().getAbsolutePath() + "/model.tflite";
 
-    private RLModel model;
+    @VisibleForTesting
+    RLModel model;
 
-    private Calculations() throws ModelLoadException {
-        loadModel();
-    }
-
-    public static Calculations getInstance() throws ModelLoadException {
+    public static Calculations getInstance() {
         if (instance == null) {
             instance = new Calculations();
         }
@@ -72,12 +74,17 @@ public class Calculations {
      * @return Needed insulin.
      */
     public float calculateInsulin() throws ModelLoadException, RLModel.InferErrorException {
+        if (model == null) {
+            loadModel();
+        }
+
         RLModel.RLInput input = getRLInput(1);
         return model.inferInsulin(input);
     }
 
     /** Gets all the data needed for the RL model from other classes. */
-    private RLModel.RLInput getRLInput(int size) {
+    @VisibleForTesting
+    RLModel.RLInput getRLInput(int size) {
         List<BgReading> bgreadings = BgReading.latest(size);
 
         ArrayList<RLModel.RLInput.DataPoint> dataPoints = new ArrayList<>();
@@ -100,7 +107,8 @@ public class Calculations {
     // ------------------ Model Importing ------------------
 
     /** Loads the model from the file. */
-    private void loadModel() throws ModelLoadException {
+    @VisibleForTesting
+    void loadModel() throws ModelLoadException {
         FileInputStream inputStream;
         try { inputStream = new FileInputStream(tflite_inputstream_path); } // Gets model's imported file from the app's private storage. Exception if not found.
         catch (FileNotFoundException e) {
@@ -113,7 +121,7 @@ public class Calculations {
             FileChannel fileChannel = inputStream.getChannel();
             MappedByteBuffer mappedBuffer =  fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
 
-            Interpreter inter = new Interpreter(mappedBuffer);
+            Interpreter inter = createInterpreter(mappedBuffer); // Creates the interpreter from the model file.
             model = new RLModel(inter);
             Log.i(TAG, "Model loaded successfully.");
         }
@@ -124,16 +132,31 @@ public class Calculations {
     }
 
     /**
+     * Creates an interpreter from a model file. Sets up settings for the interpreter.
+     * Also used for testing.
+     * @param buffer MappedByteBuffer of the model file.
+     * @return Interpreter of the model file.
+     */
+    @VisibleForTesting
+    Interpreter createInterpreter(ByteBuffer buffer) {
+        Interpreter.Options options = new Interpreter.Options();
+        options.setNumThreads(1);
+        return new Interpreter(buffer, options);
+
+    }
+
+    /**
      * Given a file uri, copies the file to the app's private storage and loads the model.
      * @param uri Uri of the file to import. Uri is obtained from androids file picker.
      */
     public void importModel(Uri uri) throws IOException, ModelLoadException {
-        InputStream stream = xdrip.getAppContext().getContentResolver().openInputStream(uri);
+        Context context = xdrip.getAppContext();
+        ContentResolver contentResolver = context.getContentResolver();
+
+        InputStream stream = contentResolver.openInputStream(uri);
 
         OutputStream output = new BufferedOutputStream(new FileOutputStream(tflite_inputstream_path));
         copyFile(stream, output); // Copies the file from the uri to the app's private storage.
-
-        loadModel();
     }
 
     /**

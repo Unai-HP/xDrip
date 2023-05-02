@@ -63,10 +63,12 @@ public class RLModel {
             throw new InferErrorException("RL model not loaded.");
         }
 
-        float[] input_data = new float[]{input.getLatestBG()};
         float[][] output_data = new float[1][1];
+        try {
+            float[] input_data = new float[]{input.getLatestBG()};
 
-        try { interpreter.run(input_data, output_data); }
+            interpreter.run(input_data, output_data);
+        }
         catch (Exception e) {
             Log.e(TAG, "Error running the model:" + e.getMessage());
             throw new InferErrorException("RL model running failed.");
@@ -110,7 +112,7 @@ public class RLModel {
             this.dataPoints = new ArrayList<>(dataPoints);
         }
 
-        public float getLatestBG() {
+        public float getLatestBG () {
             return dataPoints.get(0).bgreading;
         }
     }
