@@ -1878,8 +1878,9 @@ public class BgGraphBuilder {
 
             // Uses RL model to predict BG
             try {
-                float calculated_insulin = Calculations.getInstance().calculateInsulin();
-                insulinDisplayed =  "insulin(RL): " + calculated_insulin;
+                Double calculated_insulin = Calculations.getInstance().calculateInsulin();
+                String calculated_insulin_str = String.format("%.2f", calculated_insulin); // So that it only shows 2 decimal places
+                insulinDisplayed =  "insulin(RL): " + calculated_insulin_str;
             }
             catch (Calculations.ModelLoadException e) {
                 Log.e(TAG, "Exception doing RL prediction: " + e);
@@ -1892,7 +1893,6 @@ public class BgGraphBuilder {
                 insulinDisplayed =  "insulin(RL): " + "error";
             }
         }
-
 
         keyStore.putS("rl_insulin_need", insulinDisplayed);
         Home.updateStatusLine("insRL", insulinDisplayed);

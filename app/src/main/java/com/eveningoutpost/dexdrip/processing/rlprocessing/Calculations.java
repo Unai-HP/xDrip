@@ -73,13 +73,13 @@ public class Calculations {
      * Using historical BG data, calculate the insulin needed.
      * @return Needed insulin.
      */
-    public float calculateInsulin() throws ModelLoadException, RLModel.InferErrorException {
+    public Double calculateInsulin() throws ModelLoadException, RLModel.InferErrorException {
         if (model == null) {
             loadModel();
         }
 
         RLModel.RLInput input = getRLInput(1);
-        return model.inferInsulin(input);
+        return (new Float(model.inferInsulin(input))).doubleValue();
     }
 
     /** Gets all the data needed for the RL model from other classes. */

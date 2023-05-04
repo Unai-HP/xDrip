@@ -4,9 +4,12 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
@@ -17,8 +20,10 @@ import android.content.Context;
 import android.net.Uri;
 
 import com.eveningoutpost.dexdrip.RobolectricTestWithConfig;
+import com.eveningoutpost.dexdrip.models.BgReading;
 import com.eveningoutpost.dexdrip.xdrip;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -32,14 +37,19 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.tensorflow.lite.Interpreter;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -88,6 +98,8 @@ public class CalculationsTest extends RobolectricTestWithConfig {
             File file = new File(modelFile.getParent(), "model.tflite");  // Resulting file from importModel()
             assertTrue(file.exists());
             assertTrue(file.length()>0);
+
+            file.deleteOnExit();
         }
         catch (FileNotFoundException e)           { fail("File not found. Exception: " + e.getMessage()); }
         catch (IOException e)                     { fail("IOException. Exception: " + e.getMessage()); }
@@ -98,21 +110,49 @@ public class CalculationsTest extends RobolectricTestWithConfig {
     //TODO use file for testing. For now is not possible to load TFLite library
     @Test
     public void test_2_LoadModel() {
-        File appModelFile = new File(modelFile.getParent(), "model.tflite");
-        assertTrue(appModelFile.exists());
+        File testModelFile = new File(modelFile.getParent(), "testModel.tflite");
+        File useModelFile = new File(modelFile.getParent(), "model.tflite");
+        useModelFile.delete();
+
+        // Test if model file does not exist
+        assertThrows(Calculations.ModelLoadException.class, calculations::loadModel);
+
+        // Test if model file exists
+        try {
+            Files.copy(testModelFile.toPath(), useModelFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            assertTrue(useModelFile.exists());
+        } catch (IOException e) {
+            fail("Error copying file. Exception: " + e);
+        }
 
         try {
             calculations.loadModel();
             assertNotNull(calculations.model);
         }
         catch (Calculations.ModelLoadException e) { fail("ModelLoadException. Exception: " + e.getMessage()); }
-
-        appModelFile.deleteOnExit();
     }
 
     @Test
-    public void test_3_calculateInsulin() {
-        RLModel mockedRLModel = mock(RLModel.class);
+    public void test_3_getRLInput() {
+        List<BgReading> bgReadings = new ArrayList<>(1);
+        BgReading bgReading = new BgReading();
+        bgReading.timestamp = 1000;
+        bgReading.calculated_value = 100.0;
+
+        bgReadings.add(bgReading);
+
+        MockedStatic<BgReading> bgReadingMockedStatic = mockStatic(BgReading.class);
+        bgReadingMockedStatic.when(() -> BgReading.latest(anyInt())).thenReturn(bgReadings);
+
+        RLModel.RLInput rlInput = calculations.getRLInput(1);
+        assertEquals(1, rlInput.dataPoints.size());
+        assertEquals((float) 100, rlInput.dataPoints.get(0).bgreading);
+    }
+
+    @Test
+    public void test_4_calculateInsulin() {
+        RLModel mockedModel = mock(RLModel.class);
+        calculations.model = mockedModel;
 
         RLModel.RLInput.DataPoint dataPoint = new RLModel.RLInput.DataPoint();
         dataPoint.bgreading = 100;
@@ -126,9 +166,9 @@ public class CalculationsTest extends RobolectricTestWithConfig {
 
         try {
             Mockito.doReturn(rlInput).when(calculations).getRLInput(anyInt());
-            Mockito.doReturn((float)10).when(mockedRLModel).inferInsulin(any());
+            when(mockedModel.inferInsulin(any())).thenReturn((float) 10);
 
-            assertEquals((float) 10, calculations.calculateInsulin(), 0.01);
+            assertEquals((Double) 10.0, calculations.calculateInsulin(), 0.01);
 
         } catch (RLModel.InferErrorException e) {
             fail("InferErrorException. Exception: " + e.getMessage());
@@ -136,4 +176,15 @@ public class CalculationsTest extends RobolectricTestWithConfig {
             fail("ModelLoadException. Exception: " + e.getMessage());
         }
     }
+
+    @Test
+    public void test_4_calculateRatios(){
+        assertThrows(NotImplementedException.class, calculations::calculateRatios);
+    }
+
+    @Test
+    public void test_4_calculateBasal(){
+        assertThrows(NotImplementedException.class, calculations::calculateBasal);
+    }
+
 }

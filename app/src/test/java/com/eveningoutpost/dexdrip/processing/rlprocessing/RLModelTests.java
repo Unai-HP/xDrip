@@ -51,27 +51,24 @@ public class RLModelTests {
         assertThrows(IndexOutOfBoundsException.class, emptyInput::getLatestBG);
     }
 
-    // Tests for inner class Ratios
-    public static class RatiosTests {
-        @Test
-        public void testCreateRatios() {
-            RLModel.Ratios ratios = new RLModel.Ratios();
-            assertNotNull(ratios);
+    @Test
+    public void testCreateRatios() {
+        RLModel.Ratios ratios = new RLModel.Ratios();
+        assertNotNull(ratios);
 
-            RLModel.Ratios ratios1 = new RLModel.Ratios();
-            assertNull(ratios1.getCarbRatio());
+        RLModel.Ratios ratios1 = new RLModel.Ratios();
+        assertNull(ratios1.getCarbRatio());
 
-            RLModel.Ratios ratios2 = new RLModel.Ratios();
-            ratios2.setCarbRatio(1.0);
-            assertEquals(ratios2.getCarbRatio(), 1.0, 0.01);
+        RLModel.Ratios ratios2 = new RLModel.Ratios();
+        ratios2.setCarbRatio(1.0);
+        assertEquals(ratios2.getCarbRatio(), 1.0, 0.01);
 
-            RLModel.Ratios ratios3 = new RLModel.Ratios();
-            assertNull(ratios3.getInsulinSensitivity());
+        RLModel.Ratios ratios3 = new RLModel.Ratios();
+        assertNull(ratios3.getInsulinSensitivity());
 
-            RLModel.Ratios ratios4 = new RLModel.Ratios();
-            ratios4.setInsulinSensitivity(1.0);
-            assertEquals(ratios4.getInsulinSensitivity(), 1.0, 0.01);
-        }
+        RLModel.Ratios ratios4 = new RLModel.Ratios();
+        ratios4.setInsulinSensitivity(1.0);
+        assertEquals(ratios4.getInsulinSensitivity(), 1.0, 0.01);
     }
 
     @Test
@@ -98,7 +95,7 @@ public class RLModelTests {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
             args[1] = new float[][]{{0}}; // This the modified output of the mocked interpreter
-            return null; // to return null
+            return null; // to be void
         }).when(mockedInterpreter).run(any(), any());
 
         model = new RLModel(mockedInterpreter);
