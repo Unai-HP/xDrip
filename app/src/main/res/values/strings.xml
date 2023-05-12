@@ -852,6 +852,7 @@
     <string name="title_rl_file_picker">Select File</string>
     <string name="summary_rl_screen">Reinforcement Learning features for insulin needs simulation</string>
     <string name="title_rl_screen">Reinforcement Learning</string>
+    <string name="category_rl_bolus">Bolus suggestions</string>
     <string name="remote_snoozes">Sending and receiving remote snoozes</string>
     <string name="remote_snoozing">Remote Snoozing</string>
     <string name="snoozes_will_silence_all">Snoozes will silence all handsets in group with the accept setting below enabled on them</string>
