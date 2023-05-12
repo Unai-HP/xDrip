@@ -2513,10 +2513,6 @@ public class Preferences extends BasePreferenceActivity implements SearchPrefere
                         Log.e(TAG, "Error importing model: " + IOE);
                         JoH.static_toast_long("File not found.");
                     }
-                    catch (Calculations.ModelLoadException MLE){
-                        Log.e(TAG, "Error importing model: " + MLE);
-                        JoH.static_toast_long("Model load error.");
-                    }
                 }
             }
         }

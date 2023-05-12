@@ -149,7 +149,7 @@ public class Calculations {
      * Given a file uri, copies the file to the app's private storage and loads the model.
      * @param uri Uri of the file to import. Uri is obtained from androids file picker.
      */
-    public void importModel(Uri uri) throws IOException, ModelLoadException {
+    public void importModel(Uri uri) throws IOException {
         Context context = xdrip.getAppContext();
         ContentResolver contentResolver = context.getContentResolver();
 

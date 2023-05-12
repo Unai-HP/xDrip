@@ -103,7 +103,6 @@ public class CalculationsTest extends RobolectricTestWithConfig {
         }
         catch (FileNotFoundException e)           { fail("File not found. Exception: " + e.getMessage()); }
         catch (IOException e)                     { fail("IOException. Exception: " + e.getMessage()); }
-        catch (Calculations.ModelLoadException e) { fail("ModelLoadException. Exception: " + e.getMessage()); }
 
     }
 
@@ -134,6 +133,15 @@ public class CalculationsTest extends RobolectricTestWithConfig {
 
     @Test
     public void test_3_getRLInput() {
+        MockedStatic<BgReading> bgReadingMockedStatic = mockStatic(BgReading.class);
+        bgReadingMockedStatic.when(() -> BgReading.latest(anyInt())).thenReturn(new ArrayList<>());
+
+        // No data
+        RLModel.RLInput rlInput = calculations.getRLInput(1);
+        assertEquals(0, rlInput.dataPoints.size());
+        assertEquals(new ArrayList<>(), rlInput.dataPoints);
+
+        // One data point
         List<BgReading> bgReadings = new ArrayList<>(1);
         BgReading bgReading = new BgReading();
         bgReading.timestamp = 1000;
@@ -141,10 +149,9 @@ public class CalculationsTest extends RobolectricTestWithConfig {
 
         bgReadings.add(bgReading);
 
-        MockedStatic<BgReading> bgReadingMockedStatic = mockStatic(BgReading.class);
         bgReadingMockedStatic.when(() -> BgReading.latest(anyInt())).thenReturn(bgReadings);
 
-        RLModel.RLInput rlInput = calculations.getRLInput(1);
+        rlInput = calculations.getRLInput(1);
         assertEquals(1, rlInput.dataPoints.size());
         assertEquals((float) 100, rlInput.dataPoints.get(0).bgreading);
     }
