@@ -1245,9 +1245,9 @@
         </PreferenceScreen>
 
         <PreferenceScreen
-            android:key="rl_screen"
-            android:summary="@string/summary_rl_screen"
-            android:title="@string/title_rl_screen">
+            android:key="ai_screen"
+            android:summary="@string/summary_ai_screen"
+            android:title="@string/title_ai_screen">
             <PreferenceCategory
                 android:key="xdrip_plus_bolus_category"
                 android:title="@string/category_rl_bolus">

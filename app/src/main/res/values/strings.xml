@@ -850,8 +850,8 @@
     <string name="summary_use_rl">Use Reinforcement Learning for predictive simulation.</string>
     <string name="summary_rl_file_picker">Select the file you want to use to be the RL model</string>
     <string name="title_rl_file_picker">Select File</string>
-    <string name="summary_rl_screen">Reinforcement Learning features for insulin needs simulation</string>
-    <string name="title_rl_screen">Reinforcement Learning</string>
+    <string name="summary_ai_screen">Artificial Intelligence based features for insulin needs</string>
+    <string name="title_ai_screen">AI based suggestions</string>
     <string name="category_rl_bolus">Bolus suggestions</string>
     <string name="remote_snoozes">Sending and receiving remote snoozes</string>
     <string name="remote_snoozing">Remote Snoozing</string>
