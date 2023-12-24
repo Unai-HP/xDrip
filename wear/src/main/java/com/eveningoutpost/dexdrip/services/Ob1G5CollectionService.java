@@ -1,5 +1,7 @@
 package com.eveningoutpost.dexdrip.services;
 
+import static androidx.core.app.ActivityCompat.requestPermissions;
+
 import android.annotation.TargetApi;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -82,8 +84,8 @@ import com.polidea.rxandroidble2.scan.ScanSettings;
 
 import static com.eveningoutpost.dexdrip.Home.get_engineering_mode;
 import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.Advertisement;
+import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.ExtraData;
 import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.Mask16;
-import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.ExtraData;
 import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.doKeepAlive;
 import static com.eveningoutpost.dexdrip.models.JoH.emptyString;
 import static com.eveningoutpost.dexdrip.models.JoH.msSince;
@@ -360,7 +362,8 @@ public class Ob1G5CollectionService extends G5BaseService {
                         }
                         // TODO check if we know mac!!! Sync as part of wear sync?? - TODO preload transmitter mac??
 
-                        if (useMinimizeScanningStrategy()) {
+                        if (true){
+//                                useMinimizeScanningStrategy()) {
                             UserError.Log.d(TAG, "Skipping Scanning! : Changing state due to minimize_scanning flags");
                             changeState(CONNECT_NOW);
                         } else {
@@ -368,7 +371,9 @@ public class Ob1G5CollectionService extends G5BaseService {
                         }
                         break;
                     case CONNECT_NOW:
-                        if (specialPairingWorkaround()) {
+                        if (true){
+//                                specialPairingWorkaround()) {
+                            Log.d(TAG, "specialPairingWorkaround");
                             val locallyBonded = isDeviceLocallyBonded();
                             UserError.Log.d(TAG, "wasbonded = " + wasBonded + " local: " + locallyBonded);
                             if (wasBonded.equals(getTransmitterID()) && !locallyBonded && skippedConnects < 10) {
@@ -378,9 +383,11 @@ public class Ob1G5CollectionService extends G5BaseService {
                             } else {
                                 wasBonded = locallyBonded ? getTransmitterID() : "";
                                 skippedConnects = 0;
+                                Log.d(TAG, "specialPairingWorkaround: "+specialPairingWorkaround()+" getTrustAutoConnect: "+getTrustAutoConnect());
                                 connect_to_device(specialPairingWorkaround() && getTrustAutoConnect());
                             }
                         } else {
+                            Log.d(TAG, "no specialPairingWorkaround");
                             connect_to_device(false);
                         }
                         break;
@@ -647,8 +654,9 @@ public class Ob1G5CollectionService extends G5BaseService {
 
 
     private synchronized void connect_to_device(boolean auto) {
+        Log.d(TAG, "Connect to device.  MAC: "+transmitterMAC);
         if ((state == CONNECT) || (state == CONNECT_NOW)) {
-            // TODO check mac
+            Log.d(TAG, "    MAC: "+transmitterMAC);
             if (transmitterMAC == null) {
                 tryLoadingSavedMAC();
             }
@@ -663,6 +671,7 @@ public class Ob1G5CollectionService extends G5BaseService {
 
                 msg("Connect request");
                 if (state == CONNECT_NOW) {
+                    Log.d(TAG, "connection_linger: "+connection_linger);
                     if (connection_linger != null) JoH.releaseWakeLock(connection_linger);
                     connection_linger = JoH.getWakeLock("jam-g5-pconnect", 60000);
                 }
@@ -671,7 +680,9 @@ public class Ob1G5CollectionService extends G5BaseService {
                 stopConnect();
 
                 try {
+                    Log.d(TAG, "Connecting to device...");
                     bleDevice = rxBleClient.getBleDevice(localTransmitterMAC);
+                    Log.d(TAG, "    NAME: "+bleDevice.getName()+" MAC: "+bleDevice.getMacAddress()+" State: "+bleDevice.getConnectionState());
 
                     /// / Listen for connection state changes
                     stateSubscription = new Subscription(bleDevice.observeConnectionStateChanges()
@@ -681,11 +692,12 @@ public class Ob1G5CollectionService extends G5BaseService {
                             .subscribe(this::onConnectionStateChange, throwable -> {
                                 UserError.Log.wtf(TAG, "Got Error from state subscription: " + throwable);
                             }));
+                    Log.d(TAG, "    Is device disposed? "+stateSubscription.isDisposed());
 
                     last_connect_started = tsl();
                     // Attempt to establish a connection // TODO does this need different connection timeout for auto vs normal?
                     UserError.Log.d(TAG, "Connecting with auto: " + auto);
-                    connectionSubscription = new Subscription(bleDevice.establishConnection(auto)
+                    connectionSubscription = new Subscription(bleDevice.establis hConnection(auto)
                             .timeout(7, TimeUnit.MINUTES)
                             // .flatMap(RxBleConnection::discoverServices)
                             // .observeOn(AndroidSchedulers.mainThread())
@@ -693,6 +705,7 @@ public class Ob1G5CollectionService extends G5BaseService {
                             .subscribeOn(Schedulers.io())
 
                             .subscribe(this::onConnectionReceived, this::onConnectionFailure));
+                    Log.d(TAG, "    connectionSubscription: "+connectionSubscription.toString());
                 } catch (IllegalArgumentException e) {
                     UserError.Log.e(TAG, "Caught IllegalArgument Exception: " + e + " retry on next run");
                     // TODO if this is due to concurrent access then changing state again may be a bad idea
@@ -811,7 +824,8 @@ public class Ob1G5CollectionService extends G5BaseService {
     private void tryLoadingSavedMAC() {
         if ((transmitterMAC == null) || (!transmitterIDmatchingMAC.equals(transmitterID))) {
             if (transmitterID != null) {
-                final String this_mac = PersistentStore.getString(OB1G5_MACSTORE + transmitterID);
+                final String this_mac = "D1:AF:1B:62:CA:4F";
+//                        PersistentStore.getString(OB1G5_MACSTORE + transmitterID);
                 if (this_mac.length() == 17) {
                     UserError.Log.d(TAG, "Loaded stored MAC for: " + transmitterID + " " + this_mac);
                     transmitterMAC = this_mac;
@@ -858,8 +872,11 @@ public class Ob1G5CollectionService extends G5BaseService {
     }
 
     public static synchronized boolean isDeviceLocallyBonded() {
+        Log.d(TAG, "isDeviceLocallyBonded");
         if (transmitterMAC == null) return false;
+        Log.d(TAG, "    transmitterMAC not null");
         final Set<RxBleDevice> pairedDevices = rxBleClient.getBondedDevices();
+        Log.d(TAG, "    getting bonded devices");
         if ((pairedDevices != null) && (pairedDevices.size() > 0)) {
             for (RxBleDevice device : pairedDevices) {
                 if ((device.getMacAddress() != null) && (device.getMacAddress().equals(transmitterMAC))) {
@@ -1214,6 +1231,7 @@ public class Ob1G5CollectionService extends G5BaseService {
         if (discoverSubscription != null) {
             discoverSubscription.unsubscribe();
         }
+        if (true){}
     }
 
     private boolean isScanMatch(final String this_address, final String historical_address, final String this_name, final String search_name) {
@@ -1245,6 +1263,7 @@ public class Ob1G5CollectionService extends G5BaseService {
         final String this_name = bleScanResult.getBleDevice().getName();
         final String this_address = bleScanResult.getBleDevice().getMacAddress();
         final String search_name = getTransmitterBluetoothName();
+        Log.d(TAG, "Bluetooth Scan Result.  RSSI: "+this_rssi+" Name: "+this_name+" Address: "+this_address+"SearchName: "+search_name);
         val mdata = bleScanResult.getScanRecord().getManufacturerSpecificData(0xD << 4);
         if (isScanMatch(this_address, historicalTransmitterMAC, this_name, search_name)) {
             stopScan(); // we got one!
@@ -1359,6 +1378,7 @@ public class Ob1G5CollectionService extends G5BaseService {
         // msg("Connection failure");
         // TODO under what circumstances should we change state or do something here?
         UserError.Log.d(TAG, "Connection Disconnected/Failed: " + throwable);
+        Log.d(TAG, "    Message: " + throwable.getMessage());
 
         if (state == DISCOVER) {
             // possible encryption failure
@@ -1468,13 +1488,14 @@ public class Ob1G5CollectionService extends G5BaseService {
     }
 
     private synchronized void onConnectionStateChange(RxBleConnection.RxBleConnectionState newState) {
+        Log.d(TAG, "onConnectionStateChange newState: "+newState);
         String connection_state = "Unknown";
         switch (newState) {
             case CONNECTING:
                 connection_state = "Connecting";
                 connecting_time = tsl();
                 break;
-            case CONNECTED:
+            case CONNECTED:20:57:39.868
                 connection_state = "Connected";
                 JoH.releaseWakeLock(floatingWakeLock);
                 floatingWakeLock = JoH.getWakeLock("floating-connected", 40000);

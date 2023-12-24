@@ -35,6 +35,7 @@ public abstract class G5BaseService extends Service {
 
     protected static final int G5_LOW_BATTERY_WARNING_DEFAULT = 300;
     protected static final int G6_LOW_BATTERY_WARNING_DEFAULT = 290;
+    public static final int ALT_LOW_BATTERY_WARNING_DEFAULT = 280;
     public static int LOW_BATTERY_WARNING_LEVEL = G5_LOW_BATTERY_WARNING_DEFAULT; // updated by updateBatteryWarningLevel()
 
     public static volatile boolean getBatteryStatusNow = false;

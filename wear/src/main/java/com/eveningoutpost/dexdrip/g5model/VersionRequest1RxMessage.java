@@ -11,6 +11,7 @@ import java.util.Locale;
 public class VersionRequest1RxMessage extends BaseMessage {
 
     public static final byte opcode = 0x4B;
+    public static final byte opcode2 = 0x4A;
 
     public int status;
     public String firmware_version_string;

@@ -19,6 +19,8 @@ import static com.eveningoutpost.dexdrip.g5model.DexTimeKeeper.fromDexTimeCached
 public class BackFillStream extends BaseMessage {
 
     private int last_sequence = 0;
+    private volatile boolean locked = false;
+
 
     BackFillStream() {
         data = ByteBuffer.allocate(1000);
@@ -118,6 +120,29 @@ public class BackFillStream extends BaseMessage {
             i++;
         }
         System.out.println("\n");
+    }
+
+    public synchronized void pushNew(final byte[] packet) {
+        if (packet == null) return;
+        if (locked) {
+            UserError.Log.d(TAG, "Locked stream so ignoring");
+            return;
+        }
+        if (packet.length == 9) {
+            last_sequence = -1;
+            data.put(packet);
+        } else {
+            if (last_sequence == 0) {
+                if (packet.length > 17) {
+                    if (packet[5] != 0x00 || packet[9] != 0x00 || packet[17] != 0x00) {
+                        UserError.Log.d(TAG, "Non backfill data received - locking stream");
+                        locked = true;
+                        return;
+                    }
+                }
+            }
+            push(packet);
+        }
     }
 
     @Data

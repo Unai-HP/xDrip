@@ -20,6 +20,7 @@ public class LocationPermissionActivity extends WearableActivity {//KS
 
     private static final String TAG = LocationPermissionActivity.class.getSimpleName();
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+    private static final int PERMISSION_REQUEST_BLUETOOTH_CONNECT = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +38,10 @@ public class LocationPermissionActivity extends WearableActivity {//KS
                 this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                 PERMISSION_REQUEST_FINE_LOCATION);
-
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                PERMISSION_REQUEST_BLUETOOTH_CONNECT);
     }
 
     /*

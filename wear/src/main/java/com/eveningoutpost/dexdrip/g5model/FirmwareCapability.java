@@ -9,6 +9,8 @@ import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.getFirmwareXD
 import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.getRawFirmwareVersionString;
 import static com.eveningoutpost.dexdrip.models.JoH.emptyString;
 
+import androidx.arch.core.internal.FastSafeIterableMap;
+
 import lombok.val;
 
 public class FirmwareCapability {
@@ -19,6 +21,7 @@ public class FirmwareCapability {
     private static final ImmutableSet<String> KNOWN_G6_REV2_RAW_FIRMWARES = ImmutableSet.of("2.18.2.67");
     private static final ImmutableSet<String> KNOWN_G6_PLUS_FIRMWARES = ImmutableSet.of("2.4.2.88");
     private static final ImmutableSet<String> KNOWN_TIME_TRAVEL_TESTED = ImmutableSet.of("1.6.5.25");
+    private static final ImmutableSet<String> KNOWN_ALT_FIRMWARES = ImmutableSet.of("29.192.104.59", "32.192.104.82", "32.192.104.109", "32.192.105.64");
 
     // new G6 firmware versions will need to be added here / above
     static boolean isG6Firmware(final String version) {
@@ -143,5 +146,13 @@ public class FirmwareCapability {
 
     public static long getWarmupPeriod(final String tx_id) {
         return getWarmupPeriod(getRawFirmwareVersionString(tx_id));
+    }
+
+    public static boolean isDeviceG7(final String tx_id) {
+        return isG7Firmware(getRawFirmwareVersionString(tx_id));
+    }
+
+    static boolean isG7Firmware(final String version) {
+        return KNOWN_ALT_FIRMWARES.contains(version);
     }
 }
