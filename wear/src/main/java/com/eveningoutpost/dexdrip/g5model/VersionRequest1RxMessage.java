@@ -19,6 +19,7 @@ public class VersionRequest1RxMessage extends BaseMessage {
     public int inactive_days;
     public int max_inactive_days;
     public int max_runtime_days;
+    public long serial;
 
 
     public VersionRequest1RxMessage(byte[] packet) {

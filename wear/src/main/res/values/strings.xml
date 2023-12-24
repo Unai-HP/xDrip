@@ -272,4 +272,7 @@
     <string name="ob1_session_restarted_note">Transmitter session was restarted</string>
     <string name="xdrip_oop2_not_installed">xDrip+ needs OOP2 to handle Libre2/LibreUS sensors.</string>
     <string name="please_update_OOP2_or_move_to_calibrate_based_on_raw_mode">please update OOP2 or move to calibrate based on raw mode</string>
+    <string name="checking_for_update">Checking for update...</string>
+    <string name="wserviceurl" translatable="false">https://xdrip-plus-updates.appspot.com</string>
+    <string name="current_version_is_up_to_date">No update in the selected channel</string>
 </resources>

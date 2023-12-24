@@ -69,11 +69,13 @@ import android.preference.PreferenceManager;
 import androidx.annotation.NonNull;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
+import android.util.Log;
 
 import com.eveningoutpost.dexdrip.AddCalibration;
 import com.eveningoutpost.dexdrip.DoubleCalibrationActivity;
 import com.eveningoutpost.dexdrip.Home;
 import com.eveningoutpost.dexdrip.R;
+import com.eveningoutpost.dexdrip.cgm.carelinkfollow.message.User;
 import com.eveningoutpost.dexdrip.g5model.BatteryInfoRxMessage;
 import com.eveningoutpost.dexdrip.g5model.BluetoothServices;
 import com.eveningoutpost.dexdrip.g5model.CalibrationState;
@@ -539,6 +541,7 @@ public class Ob1G5CollectionService extends G5BaseService {
         val txid = Pref.getString(TXID_PREF, "NULL");
         val txid_filtered = txid.trim();
         transmitterID = txid_filtered;
+        UserError.Log.d(TAG, "Transmitter id:"+transmitterID);
         if (!txid.equals(txid_filtered)) {
             Pref.setString(TXID_PREF, txid_filtered);
             UserError.Log.wtf(TAG, "Had to fix invalid txid: :" + txid + ": -> :" + txid_filtered + ":");
@@ -790,13 +793,14 @@ public class Ob1G5CollectionService extends G5BaseService {
     private void tryLoadingSavedMAC() {
         if ((transmitterMAC == null) || (!transmitterIDmatchingMAC.equals(transmitterID))) {
             if (transmitterID != null) {
+                Log.d(TAG, "OB1G5_MACSTORE: " + PersistentStore.getString(OB1G5_MACSTORE) + "TransmitterID: " + PersistentStore.getString(transmitterID) + "Both: " + PersistentStore.getString(OB1G5_MACSTORE + transmitterID));
                 final String this_mac = PersistentStore.getString(OB1G5_MACSTORE + transmitterID);
                 if (this_mac.length() == 17) {
                     UserError.Log.d(TAG, "Loaded stored MAC for: " + transmitterID + " " + this_mac);
                     transmitterMAC = this_mac;
                     transmitterIDmatchingMAC = transmitterID;
                 } else {
-                    UserError.Log.d(TAG, "Did not find any saved MAC for: " + transmitterID);
+                    UserError.Log.d(TAG, "Did not find any saved MAC for: " + transmitterID + " MAC: " + this_mac);
                 }
             } else {
                 UserError.Log.e(TAG, "Could not load saved mac as transmitter id isn't set!");
@@ -1219,6 +1223,7 @@ public class Ob1G5CollectionService extends G5BaseService {
 
     // Successful result from our bluetooth scan
     private synchronized void onScanResult(final ScanResult bleScanResult) {
+        UserError.Log.d(TAG, "onScanResults...");
         // TODO MIN RSSI
         final int this_rssi = bleScanResult.getRssi();
         final String this_name = bleScanResult.getBleDevice().getName();

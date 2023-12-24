@@ -37,7 +37,14 @@ public enum CalibrationState {
     SensorFailed4(0x13, "Sensor Failed 4"),
     SensorFailed5(0x14, "Sensor Failed 5"),
     SensorFailed6(0x15, "Sensor Failed 6"),
-    SensorFailedStart(0x16, "Sensor Failed Start");
+    SensorFailedStart(0x16, "Sensor Failed Start"),
+    SensorStarted(0xC1, "Sensor Started"),
+    SensorStopped(0xC2, "Sensor Stopped"),
+    CalibrationSent(0xC3, "Calibration Sent");
+
+    private static final ImmutableSet<CalibrationState> transitional = ImmutableSet.of(WarmingUp, SensorStarted, SensorStopped, CalibrationSent);
+
+    public boolean transitional() { return transitional.contains(this); }
 
     @Getter
     byte value;

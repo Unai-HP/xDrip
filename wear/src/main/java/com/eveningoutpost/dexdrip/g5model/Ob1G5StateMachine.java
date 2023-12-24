@@ -2,6 +2,7 @@ package com.eveningoutpost.dexdrip.g5model;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Build;
 import android.os.PowerManager;
 
@@ -19,6 +20,7 @@ import com.eveningoutpost.dexdrip.R;
 import com.eveningoutpost.dexdrip.services.Ob1G5CollectionService;
 import com.eveningoutpost.dexdrip.utilitymodels.BgGraphBuilder;
 import com.eveningoutpost.dexdrip.utilitymodels.BroadcastGlucose;
+import com.eveningoutpost.dexdrip.utilitymodels.CollectionServiceStarter;
 import com.eveningoutpost.dexdrip.utilitymodels.Constants;
 import com.eveningoutpost.dexdrip.utilitymodels.Inevitable;
 import com.eveningoutpost.dexdrip.utilitymodels.NotificationChannels;
@@ -40,11 +42,13 @@ import com.polidea.rxandroidble.exceptions.BleGattCharacteristicException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -60,6 +64,7 @@ import javax.crypto.spec.SecretKeySpec;
 import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.Authentication;
 import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.Control;
 import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.ProbablyBackfill;
+import static com.eveningoutpost.dexdrip.models.JoH.bytesToHex;
 import static com.eveningoutpost.dexdrip.models.JoH.msSince;
 import static com.eveningoutpost.dexdrip.models.JoH.pratelimit;
 import static com.eveningoutpost.dexdrip.models.JoH.tsl;
@@ -68,6 +73,10 @@ import static com.eveningoutpost.dexdrip.services.G5BaseService.G5_BATTERY_LEVEL
 import static com.eveningoutpost.dexdrip.services.G5BaseService.G5_BATTERY_MARKER;
 import static com.eveningoutpost.dexdrip.services.G5BaseService.G5_BATTERY_WEARABLE_SEND;
 import static com.eveningoutpost.dexdrip.services.G5BaseService.G5_FIRMWARE_MARKER;
+import static com.eveningoutpost.dexdrip.services.G5BaseService.setG6Defaults;
+import static com.eveningoutpost.dexdrip.services.G5BaseService.unBondAndStop;
+import static com.eveningoutpost.dexdrip.services.Ob1G5CollectionService.STATE.GET_DATA;
+import static com.eveningoutpost.dexdrip.services.Ob1G5CollectionService.STATE.SCAN;
 import static com.eveningoutpost.dexdrip.services.Ob1G5CollectionService.android_wear;
 import static com.eveningoutpost.dexdrip.services.Ob1G5CollectionService.getTransmitterID;
 import static com.eveningoutpost.dexdrip.services.Ob1G5CollectionService.onlyUsingNativeMode;
@@ -86,6 +95,7 @@ import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
 import com.polidea.rxandroidble2.exceptions.BleGattCharacteristicException;
 
 import io.reactivex.schedulers.Schedulers;
+import lombok.val;
 
 
 /**
@@ -103,7 +113,7 @@ public class Ob1G5StateMachine {
     public static final String PREF_QUEUE_DRAINED = "OB1-QUEUE-DRAINED";
     public static final String CLOSED_OK_TEXT = "Closed OK";
 
-    private static final int LOW_BATTERY_WARNING_LEVEL = Pref.getStringToInt("g5-battery-warning-level", 300); // voltage a < this value raises warnings;
+    private static int LOW_BATTERY_WARNING_LEVEL = Pref.getStringToInt("g5-battery-warning-level", 300); // voltage a < this value raises warnings;
     private static final long BATTERY_READ_PERIOD_MS = HOUR_IN_MS * 12; // how often to poll battery data (12 hours)
     private static final long MAX_BACKFILL_PERIOD_MS = HOUR_IN_MS * 3; // how far back to request backfill data
     private static final int BACKFILL_CHECK_SMALL = 3;
@@ -208,6 +218,179 @@ public class Ob1G5StateMachine {
                     }
                 });
         return true;
+    }
+
+    private static boolean shortTxId() {
+        return getTransmitterID().length() < 6;
+    }
+
+    public static final UUID ExtraData = UUID.fromString("F8083538-849E-531C-C594-30F1F86A4EA5");
+    private static volatile long lastAuthenticationStream = 0;
+
+    private static void handleAuthenticationThrowable(final Throwable throwable, final Ob1G5CollectionService parent) {
+        if (!(throwable instanceof OperationSuccess)) {
+            if (((parent.getState() == Ob1G5CollectionService.STATE.CLOSED)
+                    || (parent.getState() == Ob1G5CollectionService.STATE.CLOSE))
+                    && (throwable instanceof BleDisconnectedException)) {
+                UserError.Log.d(TAG, "normal authentication notification throwable: (" + parent.getState() + ") " + throwable + " " + JoH.dateTimeText(tsl()));
+                parent.connectionStateChange(CLOSED_OK_TEXT);
+            } else if ((parent.getState() == Ob1G5CollectionService.STATE.BOND) && (throwable instanceof TimeoutException)) {
+                // TODO Trigger on Error count / Android wear metric
+                // UserError.Log.e(TAG,"Attempting to reset/create bond due to: "+throwable);
+                // parent.reset_bond(true);
+                // parent.unBond(); // WARN
+            } else {
+                UserError.Log.e(TAG, "authentication notification  throwable: (" + parent.getState() + ") " + throwable + " " + JoH.dateTimeText(tsl()));
+                parent.incrementErrors();
+                if (throwable instanceof BleCannotSetCharacteristicNotificationException
+                        || throwable instanceof BleGattCharacteristicException) {
+                    parent.tryGattRefresh();
+                    parent.changeState(SCAN);
+                }
+            }
+            if ((throwable instanceof BleDisconnectedException) || (throwable instanceof TimeoutException)) {
+                if ((parent.getState() == Ob1G5CollectionService.STATE.BOND) || (parent.getState() == Ob1G5CollectionService.STATE.CHECK_AUTH)) {
+
+                    if (parent.getState() == Ob1G5CollectionService.STATE.BOND) {
+                        UserError.Log.d(TAG, "SLEEPING BEFORE RECONNECT");
+                        threadSleep(15000);
+                    }
+                    UserError.Log.d(TAG, "REQUESTING RECONNECT");
+                    parent.changeState(SCAN);
+                }
+            }
+        }
+    }
+
+    public static final int ALT_LOW_BATTERY_WARNING_DEFAULT = 280;
+    @SuppressLint("CheckResult")
+    public static boolean doCheckAuth2(final Ob1G5CollectionService parent, final RxBleConnection connection) {
+        if (connection == null) return false;
+//        parent.msg("Authorizing 2");
+
+        if (!usingG6()) {
+            setG6Defaults();
+        }
+
+        if (shortTxId()) {
+            LOW_BATTERY_WARNING_LEVEL = ALT_LOW_BATTERY_WARNING_DEFAULT;
+            Pref.setString("g5-battery-warning-level", "" + ALT_LOW_BATTERY_WARNING_DEFAULT);
+            parent.updateBatteryWarningLevel();
+        }
+
+        if (parent.android_wear) {
+            speakSlowly = true;
+            UserError.Log.d(TAG, "Setting speak slowly to true"); // WARN should be reactive or on named devices
+        }
+
+        try {
+            parent.plugin.amConnected();
+        } catch (Exception e) {
+            UserError.Log.e(TAG, "Got exception in plugin: " + e);
+            e.printStackTrace();
+        }
+
+        connection.setupNotification(ExtraData)
+                .timeout(15, TimeUnit.SECONDS) // WARN
+                .doOnNext(notificationObservable -> {
+                    UserError.Log.d(TAG,"Extra data notifications enabled");
+                    connection.setupIndication(Authentication)
+                            .timeout(15, TimeUnit.SECONDS) // WARN
+                            .doOnNext(notificationObservable2 -> doNext(parent, connection))
+                            .flatMap(notificationObservable2 -> notificationObservable2)
+                            .subscribe(bytes -> {
+                                lastAuthenticationStream = tsl();
+                                UserError.Log.d(TAG, "Received Authentication 2 indication bytes: " + bytesToHex(bytes));
+                                try {
+                                    if (parent.plugin.bondNow(bytes)) {
+                                        UserError.Log.d(TAG, "Creating bond!!");
+                                        parent.changeState(Ob1G5CollectionService.STATE.BOND);
+                                    }
+                                    if (parent.plugin.receivedResponse(bytes)) {
+                                        doNext(parent, connection);
+                                    }
+                                } catch (Exception e) {
+                                    UserError.Log.e(TAG,"Got exception in plugin: " + e);
+                                    parent.lastSensorStatus = e.getMessage();
+                                    if (e instanceof InvalidParameterException) {
+                                        parent.resetSomeInternalState();
+                                    } else if (e instanceof SecurityException) {
+                                        parent.logFailure();
+                                        parent.clearPersistStore();
+                                        parent.changeState(SCAN);
+                                    } else {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }, throwable -> handleAuthenticationThrowable(throwable, parent));
+                })
+                .flatMap(notificationObservable -> notificationObservable)
+                .subscribe(bytes -> {
+                    lastAuthenticationStream = tsl();
+                    UserError.Log.d(TAG, "Received extra data indication bytes: " + bytesToHex(bytes));
+                    try {
+                        if (parent.plugin.receivedData(bytes)) {
+                            doNext(parent, connection);
+                        }
+                    } catch (Exception e) {
+                        UserError.Log.e(TAG, "Got exception in plugin: " + e);
+                        e.printStackTrace();
+                    }
+                }, throwable -> handleAuthenticationThrowable(throwable, parent));
+        return true;
+    }
+
+    private static void doNext(final Ob1G5CollectionService parent, final RxBleConnection connection) {
+        try {
+            val p = parent.plugin.aNext();
+            if (p == null) {
+                UserError.Log.d(TAG, "Null value returned via plugin");
+                if (shortTxId()) {
+                    UserError.Log.d(TAG, "Attempting state reset");
+                    parent.resetSomeInternalState();
+                }
+                return;
+            }
+            val cmd = p[0];
+
+            if (p.length == 2) {
+                val data = p[1];
+                if (data != null) {
+                    connection.getCharacteristic(ExtraData)
+                            .blockingGet().setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                    val len = data.length;
+                    for (int i = 0; i < len; i = i + 20) {
+                        val size = Math.min(20, len - i);
+                        val buf = new byte[size];
+                        System.arraycopy(data, i, buf, 0, size);
+                        UserError.Log.d(TAG, "Sending auth data: " + bytesToHex(buf));
+                        connection.writeCharacteristic(ExtraData, nn(buf)).subscribe();
+                        threadSleep(40);
+                    }
+                    // TODO wait for completion?
+                    threadSleep(500);
+                }
+                if (cmd != null) {
+                    UserError.Log.d(TAG, "Sending auth command: " + HexDump.dumpHexString(cmd));
+                    connection.getCharacteristic(Authentication)
+                            .blockingGet().setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                    connection.writeCharacteristic(Authentication, nn(cmd)).subscribe();
+                }
+            } else if (p.length == 1) {
+                if (cmd != null) {
+                    parent.changeState(GET_DATA);
+                }
+            } else if (p.length == 3) {
+                parent.savePersist();
+                if (parent.isDeviceLocallyBonded()) {
+                    parent.changeState(Ob1G5CollectionService.STATE.UNBOND);
+                } else {
+                    UserError.Log.d(TAG, "Device does not appear to be bonded?");
+                }
+            }
+        } catch (Exception e) {
+            UserError.Log.wtf(TAG, "Got exception in doNext() " + e);
+        }
     }
 
     @SuppressLint("CheckResult")
@@ -615,6 +798,24 @@ public class Ob1G5StateMachine {
                             glucoseRxCommon(eglucose, parent, connection);
                             break;
 
+                        case EGlucoseRxMessage2:
+                            val eglucose2 = (EGlucoseRxMessage2) data_packet.msg;
+                            UserError.Log.d(TAG, "EG2 Debug: " + eglucose2);
+                            if (eglucose2.isValid()) {
+                                parent.processCalibrationState(eglucose2.calibrationState());
+                                DexTimeKeeper.updateAge(getTransmitterID(), (int) eglucose2.timestamp);
+                                DexSessionKeeper.setStart(eglucose2.getRealSessionStartTime());
+                                if (eglucose2.usable()) {
+                                    parent.msg("Got glucose");
+                                } else {
+                                    parent.msg("Got data");
+                                }
+                                glucoseRxCommon(eglucose2, parent, connection);
+                                parent.saveTransmitterMac();
+                            } else {
+                                parent.msg("Invalid Glucose");
+                            }
+                            break;
 
                         case CalibrateRxMessage:
                             final CalibrateRxMessage calibrate = (CalibrateRxMessage) data_packet.msg;
@@ -1179,6 +1380,30 @@ public class Ob1G5StateMachine {
         }
         if (changed) saveQueue();
     }
+    public static volatile boolean unBondAndStop = false;
+    @SuppressLint("CheckResult")
+    public static boolean doUnBond(final Ob1G5CollectionService parent, RxBleConnection connection) {
+        if (connection == null) return false;
+        parent.msg("Unbond Transmitter a:" + usingAlt());
+        if (unBondAndStop) {
+            localUnbondAndStop(parent, connection);
+        } else {
+            parent.unBond();
+        }
+        return true;
+    }
+
+    private static void localUnbondAndStop(final Ob1G5CollectionService parent, RxBleConnection connection) {
+        Inevitable.task("local unbond", 3000, () -> {
+            parent.unBond(); // remove local bond
+            Inevitable.task("shutdown collector", 2000, () -> {
+                UserError.Log.d(TAG, "Shutting down collector");
+                DexCollectionType.setDexCollectionType(DexCollectionType.Disabled);
+                CollectionServiceStarter.restartCollectionServiceBackground();
+                parent.unBondAndStop = false;
+            });
+        });
+    }
 
     private static void processGlucoseRxMessage(Ob1G5CollectionService parent, final BaseGlucoseRxMessage glucose) {
         if (glucose == null) return;
@@ -1592,6 +1817,7 @@ public class Ob1G5StateMachine {
         SessionStopRxMessage,
         GlucoseRxMessage,
         EGlucoseRxMessage,
+        EGlucoseRxMessage2,
         CalibrateRxMessage,
         BackFillRxMessage,
         TransmitterTimeRxMessage,

@@ -5,7 +5,11 @@ package com.eveningoutpost.dexdrip.g5model;
 import com.eveningoutpost.dexdrip.utilitymodels.Constants;
 import com.google.common.collect.ImmutableSet;
 
+import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.getFirmwareXDetails;
 import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.getRawFirmwareVersionString;
+import static com.eveningoutpost.dexdrip.models.JoH.emptyString;
+
+import lombok.val;
 
 public class FirmwareCapability {
 
@@ -37,6 +41,35 @@ public class FirmwareCapability {
 
     static boolean isG5Firmware(final String version) {
         return KNOWN_G5_FIRMWARES.contains(version);
+    }
+
+    public static boolean isTransmitterStandardFirefly(final String tx_id) { // Firefly that has not been modified
+        if (!isTransmitterModified(tx_id) && isTransmitterRawIncapable(tx_id)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isTransmitterRawIncapable(final String tx_id) {
+        val firmware_version = getRawFirmwareVersionString(tx_id);
+        return doWeHaveVersion(tx_id) && isKnownFirmware(firmware_version) && !isFirmwareRawCapable(firmware_version);
+    }
+
+    public static boolean doWeHaveVersion(final String tx_id) {
+        val firmware_version = getRawFirmwareVersionString(tx_id);
+        return !emptyString(firmware_version) && !firmware_version.equals("error");
+    }
+
+    public static boolean isTransmitterModified(final String tx_id) {
+        val vr1 = (VersionRequest1RxMessage) getFirmwareXDetails(tx_id, 1);
+        if (vr1 != null) {
+            return vr1.max_runtime_days >= 180;
+        }
+        return false;
+    }
+
+    public static boolean isFirmwareResistanceCapable(final String Version) {
+        return !isG6Rev2(Version) && !isG6Plus(Version);
     }
 
     static boolean isFirmwareTimeTravelCapable(final String version) {

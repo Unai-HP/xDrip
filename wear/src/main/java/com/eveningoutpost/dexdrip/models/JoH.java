@@ -35,6 +35,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.text.InputType;
@@ -90,6 +91,8 @@ import java.util.zip.Inflater;
 import static android.bluetooth.BluetoothDevice.PAIRING_VARIANT_PIN;
 import static android.content.Context.ALARM_SERVICE;
 import static android.content.Context.VIBRATOR_SERVICE;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 //KS import android.content.DialogInterface;
 //KS import android.graphics.Canvas;
@@ -150,9 +153,6 @@ public class JoH {
     }
 
     // TODO can we optimize this with System.currentTimeMillis ?
-    public static long tsl() {
-        return new Date().getTime();
-    }
 
     public static long msSince(long when) {
         return (tsl() - when);
@@ -197,6 +197,10 @@ public class JoH {
         return sb.toString();
     }
 
+    public static long tsl() {
+        return System.currentTimeMillis();
+    }
+
     public static byte[] reverseBytes(byte[] source) {
         byte[] dest = new byte[source.length];
         for (int i = 0; i < source.length; i++) {
@@ -207,6 +211,13 @@ public class JoH {
 
     public static byte[] tolerantHexStringToByteArray(String str) {
         return hexStringToByteArray(str.toUpperCase().replaceAll("[^A-F0-9]",""));
+    }
+
+    public static long uptime() {
+        return SystemClock.elapsedRealtime();
+    }
+    public static boolean upForAtLeastMins(int mins) {
+        return uptime() > Constants.MINUTE_IN_MS * mins;
     }
 
     public static byte[] hexStringToByteArray(String str) {
@@ -599,7 +610,7 @@ public class JoH {
         }
     }
 
-/*//KS    public static void fixActionBar(AppCompatActivity context) {
+    public static void fixActionBar(AppCompatActivity context) {
         try {
             context.getSupportActionBar().setDisplayShowHomeEnabled(true);
             context.getSupportActionBar().setIcon(R.drawable.ic_launcher);
@@ -607,7 +618,7 @@ public class JoH {
             Log.e(TAG, "Got exception with supportactionbar: " + e.toString());
 
         }
-    }*/
+    }
 
     public static HashMap<String, Object> JsonStringtoMap(String json) {
         return new Gson().fromJson(json, new TypeToken<HashMap<String, Object>>() {
