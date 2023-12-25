@@ -64,23 +64,22 @@ import com.eveningoutpost.dexdrip.utilitymodels.StatusItem.Highlight;
 import com.eveningoutpost.dexdrip.utilitymodels.WholeHouse;
 import com.eveningoutpost.dexdrip.ui.helpers.Span;
 import com.eveningoutpost.dexdrip.utils.DexCollectionType;
-import com.eveningoutpost.dexdrip.utils.bt.Subscription;
 import com.eveningoutpost.dexdrip.utils.framework.WakeLockTrampoline;
 import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayEntry;
 import com.eveningoutpost.dexdrip.xdrip;
 import com.google.common.collect.Sets;
-import com.polidea.rxandroidble2.RxBleClient;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleCustomOperation;
-import com.polidea.rxandroidble2.RxBleDevice;
-import com.polidea.rxandroidble2.RxBleDeviceServices;
-import com.polidea.rxandroidble2.exceptions.BleGattCallbackTimeoutException;
-import com.polidea.rxandroidble2.exceptions.BleScanException;
-import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
-import com.polidea.rxandroidble2.scan.ScanFilter;
-import com.polidea.rxandroidble2.scan.ScanResult;
-import com.polidea.rxandroidble2.scan.ScanSettings;
+import com.polidea.rxandroidble3.RxBleClient;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.RxBleCustomOperation;
+import com.polidea.rxandroidble3.RxBleDevice;
+import com.polidea.rxandroidble3.RxBleDeviceServices;
+import com.polidea.rxandroidble3.exceptions.BleGattCallbackTimeoutException;
+import com.polidea.rxandroidble3.exceptions.BleScanException;
+import com.polidea.rxandroidble3.internal.RxBleLog;
+import com.polidea.rxandroidble3.internal.connection.RxBleGattCallback;
+import com.polidea.rxandroidble3.scan.ScanFilter;
+import com.polidea.rxandroidble3.scan.ScanResult;
+import com.polidea.rxandroidble3.scan.ScanSettings;
 
 import static com.eveningoutpost.dexdrip.Home.get_engineering_mode;
 import static com.eveningoutpost.dexdrip.g5model.BluetoothServices.Advertisement;
@@ -106,6 +105,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import lombok.Getter;
 import lombok.Setter;
@@ -148,8 +148,12 @@ import static com.eveningoutpost.dexdrip.utilitymodels.StatusItem.Highlight.CRIT
 import static com.eveningoutpost.dexdrip.utilitymodels.StatusItem.Highlight.NORMAL;
 import static com.eveningoutpost.dexdrip.utilitymodels.StatusItem.Highlight.NOTICE;
 import static com.eveningoutpost.dexdrip.utils.DexCollectionType.DexcomG5;
-import static com.eveningoutpost.dexdrip.utils.bt.Subscription.addErrorHandler;
 import static com.eveningoutpost.dexdrip.xdrip.gs;
+//import static com.polidea.rxandroidble3.RxBleClient.State.BLUETOOTH_NOT_ENABLED;
+//import static com.polidea.rxandroidble3.RxBleClient.State.LOCATION_PERMISSION_NOT_GRANTED;
+//import static com.polidea.rxandroidble3.RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED;
+//import static com.polidea.rxandroidble3.RxBleClient.State.READY;
+import static com.polidea.rxandroidble3.exceptions.BleScanException.BLUETOOTH_NOT_AVAILABLE;
 
 /*import com.polidea.rxandroidble.RxBleClient;
 import com.polidea.rxandroidble.RxBleConnection;
@@ -223,10 +227,10 @@ public class Ob1G5CollectionService extends G5BaseService {
     public static boolean android_wear = false;
     public static boolean wear_broadcast = false;
 
-    private static volatile Subscription scanSubscription;
-    private static volatile Subscription connectionSubscription;
-    private static volatile Subscription stateSubscription;
-    private Subscription discoverSubscription;
+    private static volatile Disposable scanSubscription;
+    private static volatile Disposable connectionSubscription;
+    private static volatile Disposable stateSubscription;
+    private Disposable discoverSubscription;
     private RxBleDevice bleDevice;
     private RxBleConnection connection;
     public volatile IPluginDA plugin;
@@ -410,14 +414,17 @@ public class Ob1G5CollectionService extends G5BaseService {
                     case CHECK_AUTH:
                         if (do_auth) {
                             final PowerManager.WakeLock linger_wl_connect = JoH.getWakeLock("jam-g5-check-linger", 6000);
-                            if (plugin != null) {
-                                if (!Ob1G5StateMachine.doCheckAuth2(this, connection)) {
-                                    resetState();
-                                }
-                            } else {
-                                if (!Ob1G5StateMachine.doCheckAuth(this, connection)) {
-                                    resetState();
-                                }
+//                            if (plugin != null) {
+//                                if (!Ob1G5StateMachine.doCheckAuth2(this, connection)) {
+//                                    resetState();
+//                                }
+//                            } else {
+//                                if (!Ob1G5StateMachine.doCheckAuth(this, connection)) {
+//                                    resetState();
+//                                }
+//                            }
+                            if (!Ob1G5StateMachine.doCheckAuth2(this, connection)) {
+                                resetState();
                             }
                         } else {
                             UserError.Log.d(TAG, "Skipping authentication");
@@ -608,26 +615,8 @@ public class Ob1G5CollectionService extends G5BaseService {
                     lastScanError = null;
                 }
 
-                scanSubscription = new Subscription(rxBleClient.scanBleDevices(
-                        new ScanSettings.Builder()
-                                //.setScanMode(static_last_timestamp < 1 ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_BALANCED)
-                                //.setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
-                                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                                // TODO revisit scan mode
-                                .setScanMode(android_wear ? ScanSettings.SCAN_MODE_BALANCED :
-                                        historicalTransmitterMAC.length() <= 5 ? ScanSettings.SCAN_MODE_LOW_LATENCY :
-                                                minimize_scanning ? ScanSettings.SCAN_MODE_BALANCED : ScanSettings.SCAN_MODE_LOW_LATENCY)
-                                // .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
-                                .build(),
-
-                        // scan filter doesn't work reliable on android sdk 23+
-                        filter
-                )
-                        // observe on?
-                        // do unsubscribe?
-                        //.doOnUnsubscribe(this::clearSubscription)
-                        .subscribeOn(Schedulers.io())
-                        .subscribe(this::onScanResult, this::onScanFailure));
+                scanSubscription = rxBleClient.scanBleDevices(new ScanSettings.Builder().build())
+                        .subscribe(this::onScanResult, this::onScanFailure);
                 if (minimize_scanning) {
                     // Must be less than fail over timeout
                     Inevitable.task(STOP_SCAN_TASK_ID, 320 * Constants.SECOND_IN_MS, this::stopScanWithTimeoutAndReschedule);
@@ -680,31 +669,31 @@ public class Ob1G5CollectionService extends G5BaseService {
                 stopConnect();
 
                 try {
+                    RxBleClient.setLogLevel(RxBleLog.DEBUG);
                     Log.d(TAG, "Connecting to device...");
+                    Log.d(TAG, "    MAC to connect: "+localTransmitterMAC);
                     bleDevice = rxBleClient.getBleDevice(localTransmitterMAC);
                     Log.d(TAG, "    NAME: "+bleDevice.getName()+" MAC: "+bleDevice.getMacAddress()+" State: "+bleDevice.getConnectionState());
 
+                    stateSubscription = rxBleClient.observeStateChanges()
+                            .subscribe(
+                                    rxBleScanResult -> {
+                                        // Process scan result here.
+                                    },
+                                    throwable -> {
+                                        // Handle an error here.
+                                    }
+                            );
+
+
                     /// / Listen for connection state changes
-                    stateSubscription = new Subscription(bleDevice.observeConnectionStateChanges()
-                            // .observeOn(AndroidSchedulers.mainThread())
-                            .subscribeOn(Schedulers.io())
-                            .doFinally(this::releaseFloating)
-                            .subscribe(this::onConnectionStateChange, throwable -> {
-                                UserError.Log.wtf(TAG, "Got Error from state subscription: " + throwable);
-                            }));
                     Log.d(TAG, "    Is device disposed? "+stateSubscription.isDisposed());
 
                     last_connect_started = tsl();
                     // Attempt to establish a connection // TODO does this need different connection timeout for auto vs normal?
                     UserError.Log.d(TAG, "Connecting with auto: " + auto);
-                    connectionSubscription = new Subscription(bleDevice.establis hConnection(auto)
-                            .timeout(7, TimeUnit.MINUTES)
-                            // .flatMap(RxBleConnection::discoverServices)
-                            // .observeOn(AndroidSchedulers.mainThread())
-                            // .doOnUnsubscribe(this::clearSubscription)
-                            .subscribeOn(Schedulers.io())
-
-                            .subscribe(this::onConnectionReceived, this::onConnectionFailure));
+                    connectionSubscription = bleDevice.establishConnection(auto)
+                            .subscribe(this::onConnectionReceived, this::onConnectionFailure);
                     Log.d(TAG, "    connectionSubscription: "+connectionSubscription.toString());
                 } catch (IllegalArgumentException e) {
                     UserError.Log.e(TAG, "Caught IllegalArgument Exception: " + e + " retry on next run");
@@ -731,7 +720,7 @@ public class Ob1G5CollectionService extends G5BaseService {
                 if (d)
                     UserError.Log.d(TAG, "Local bonding state: " + (isDeviceLocallyBonded() ? "BONDED" : "NOT Bonded"));
                 stopDiscover();
-                discoverSubscription = new Subscription(connection.discoverServices(10, TimeUnit.SECONDS).subscribe(this::onServicesDiscovered, this::onDiscoverFailed));
+                discoverSubscription = connection.discoverServices(10, TimeUnit.SECONDS).subscribe(this::onServicesDiscovered, this::onDiscoverFailed);
             } else {
                 UserError.Log.e(TAG, "No connection when in DISCOVER state - reset");
                 state = INIT;
@@ -1105,7 +1094,7 @@ public class Ob1G5CollectionService extends G5BaseService {
             }
         }
         if (d) RxBleClient.setLogLevel(RxBleLog.DEBUG);
-        addErrorHandler(TAG);
+//        addErrorHandler(TAG);
         listenForChangeInSettings(true);
 
     }
@@ -1208,7 +1197,7 @@ public class Ob1G5CollectionService extends G5BaseService {
 
     private synchronized void stopScan() {
         if (scanSubscription != null) {
-            scanSubscription.unsubscribe();
+            scanSubscription.dispose();
         }
         UserError.Log.d(TAG, "DEBUG: killing stop scan task");
         Inevitable.kill(STOP_SCAN_TASK_ID);
@@ -1220,16 +1209,16 @@ public class Ob1G5CollectionService extends G5BaseService {
 
     private synchronized void stopConnect() {
         if (connectionSubscription != null) {
-            connectionSubscription.unsubscribe();
+            connectionSubscription.dispose();
         }
         if (stateSubscription != null) {
-            stateSubscription.unsubscribe();
+            stateSubscription.dispose();
         }
     }
 
     private synchronized void stopDiscover() {
         if (discoverSubscription != null) {
-            discoverSubscription.unsubscribe();
+            discoverSubscription.dispose();
         }
         if (true){}
     }
@@ -1495,7 +1484,7 @@ public class Ob1G5CollectionService extends G5BaseService {
                 connection_state = "Connecting";
                 connecting_time = tsl();
                 break;
-            case CONNECTED:20:57:39.868
+            case CONNECTED:
                 connection_state = "Connected";
                 JoH.releaseWakeLock(floatingWakeLock);
                 floatingWakeLock = JoH.getWakeLock("floating-connected", 40000);
@@ -1623,7 +1612,7 @@ public class Ob1G5CollectionService extends G5BaseService {
         final String text;
 
         switch (bleScanException.getReason()) {
-            case BleScanException.BLUETOOTH_NOT_AVAILABLE:
+            case BLUETOOTH_NOT_AVAILABLE:
                 text = "Bluetooth is not available";
                 break;
             case BleScanException.BLUETOOTH_DISABLED:
@@ -1679,7 +1668,6 @@ public class Ob1G5CollectionService extends G5BaseService {
         }
 
         @NonNull
-        @Override
         public Observable<Void> asObservable(BluetoothGatt bluetoothGatt,
                                              RxBleGattCallback rxBleGattCallback,
                                              Scheduler scheduler) throws Throwable {
@@ -1691,6 +1679,13 @@ public class Ob1G5CollectionService extends G5BaseService {
 
         private Void refreshDeviceCache(final BluetoothGatt gatt) {
             UserError.Log.d(TAG, "Gatt Refresh " + (JoH.refreshDeviceCache(TAG, gatt) ? "succeeded" : "failed"));
+            return null;
+        }
+
+        @NonNull
+        @Override
+        public io.reactivex.rxjava3.core.Observable<Void> asObservable(BluetoothGatt bluetoothGatt, RxBleGattCallback rxBleGattCallback, io.reactivex.rxjava3.core.Scheduler scheduler) throws Throwable {
+            Log.d(TAG, "calledd asObservable. Not implemented");
             return null;
         }
     }

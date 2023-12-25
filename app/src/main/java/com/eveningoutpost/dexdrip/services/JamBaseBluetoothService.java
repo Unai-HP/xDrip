@@ -14,10 +14,10 @@ import com.eveningoutpost.dexdrip.utilitymodels.Inevitable;
 import com.eveningoutpost.dexdrip.utilitymodels.PersistentStore;
 import com.eveningoutpost.dexdrip.utilitymodels.Pref;
 import com.eveningoutpost.dexdrip.utils.bt.HandleBleScanException;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleCustomOperation;
-import com.polidea.rxandroidble2.exceptions.BleScanException;
-import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.RxBleCustomOperation;
+import com.polidea.rxandroidble3.exceptions.BleScanException;
+import com.polidea.rxandroidble3.internal.connection.RxBleGattCallback;
 
 import java.util.concurrent.TimeUnit;
 

@@ -34,10 +34,10 @@ import com.eveningoutpost.dexdrip.utils.bt.Mimeograph;
 import com.eveningoutpost.dexdrip.wearintegration.WatchUpdaterService;
 import com.eveningoutpost.dexdrip.xdrip;
 import com.google.gson.reflect.TypeToken;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.exceptions.BleCannotSetCharacteristicNotificationException;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
-import com.polidea.rxandroidble2.exceptions.BleGattCharacteristicException;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.exceptions.BleCannotSetCharacteristicNotificationException;
+import com.polidea.rxandroidble3.exceptions.BleDisconnectedException;
+import com.polidea.rxandroidble3.exceptions.BleGattCharacteristicException;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
@@ -568,7 +568,7 @@ public class Ob1G5StateMachine {
                                                 UserError.Log.d(TAG, "Wrote bond request value: " + bytesToHex(bondRequestValue));
                                                 speakSlowly();
                                                 connection.readCharacteristic(Authentication)
-                                                        .observeOn(Schedulers.io())
+//                                                        .observeOn(Schedulers.io())
                                                         .timeout(10, TimeUnit.SECONDS)
                                                         .subscribe(
                                                                 status_value -> {
@@ -1918,7 +1918,7 @@ public class Ob1G5StateMachine {
 
         connection.setupNotification(ProbablyBackfill)
                 .timeout(15, TimeUnit.SECONDS) // WARN
-                .observeOn(Schedulers.newThread())
+//                .observeOn(Schedulers.newThread())
                 .flatMap(notificationObservable -> notificationObservable)
                 .subscribe(bytes -> {
                             UserError.Log.d(TAG, "Received backfill notification bytes: " + bytesToHex(bytes));

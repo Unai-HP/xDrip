@@ -12,11 +12,11 @@ import com.eveningoutpost.dexdrip.utilitymodels.Inevitable;
 import com.eveningoutpost.dexdrip.utilitymodels.RxBleProvider;
 import com.eveningoutpost.dexdrip.utils.BtCallBack;
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.RxBleClient;
-import com.polidea.rxandroidble2.exceptions.BleScanException;
-import com.polidea.rxandroidble2.scan.ScanFilter;
-import com.polidea.rxandroidble2.scan.ScanResult;
-import com.polidea.rxandroidble2.scan.ScanSettings;
+import com.polidea.rxandroidble3.RxBleClient;
+import com.polidea.rxandroidble3.exceptions.BleScanException;
+import com.polidea.rxandroidble3.scan.ScanFilter;
+import com.polidea.rxandroidble3.scan.ScanResult;
+import com.polidea.rxandroidble3.scan.ScanSettings;
 
 import java.util.ArrayList;
 import java.util.List;

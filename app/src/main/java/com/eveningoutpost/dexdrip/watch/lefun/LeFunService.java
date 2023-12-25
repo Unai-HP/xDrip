@@ -34,7 +34,7 @@ import com.eveningoutpost.dexdrip.watch.lefun.messages.TxSetScreens;
 import com.eveningoutpost.dexdrip.watch.lefun.messages.TxSetTime;
 import com.eveningoutpost.dexdrip.watch.lefun.messages.TxShakeDetect;
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.RxBleDeviceServices;
+import com.polidea.rxandroidble3.RxBleDeviceServices;
 
 import java.util.ArrayList;
 import java.util.List;

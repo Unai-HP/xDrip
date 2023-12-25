@@ -47,7 +47,7 @@ import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayEntry;
 import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayService;
 import com.eveningoutpost.dexdrip.xdrip;
 import com.google.zxing.integration.android.IntentIntegrator;
-import com.polidea.rxandroidble2.scan.ScanFilter;
+import com.polidea.rxandroidble3.scan.ScanFilter;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

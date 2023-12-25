@@ -35,11 +35,11 @@ import com.eveningoutpost.dexdrip.watch.miband.message.DisplayControllMessageMib
 import com.eveningoutpost.dexdrip.watch.miband.message.FeaturesControllMessage;
 import com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes;
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleDeviceServices;
-import com.polidea.rxandroidble2.exceptions.BleCannotSetCharacteristicNotificationException;
-import com.polidea.rxandroidble2.exceptions.BleCharacteristicNotFoundException;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.RxBleDeviceServices;
+import com.polidea.rxandroidble3.exceptions.BleCannotSetCharacteristicNotificationException;
+import com.polidea.rxandroidble3.exceptions.BleCharacteristicNotFoundException;
+import com.polidea.rxandroidble3.exceptions.BleDisconnectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

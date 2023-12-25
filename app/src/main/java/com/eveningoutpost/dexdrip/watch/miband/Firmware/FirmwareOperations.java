@@ -12,9 +12,9 @@ import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.COM
 import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.COMMAND_FIRMWARE_INIT;
 import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.COMMAND_FIRMWARE_START_DATA;
 import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.COMMAND_FIRMWARE_UPDATE_SYNC;
-import static com.polidea.rxandroidble2.RxBleConnection.GATT_MTU_MAXIMUM;
-import static com.polidea.rxandroidble2.RxBleConnection.GATT_MTU_MINIMUM;
-import static com.polidea.rxandroidble2.RxBleConnection.GATT_WRITE_MTU_OVERHEAD;
+import static com.polidea.rxandroidble3.RxBleConnection.GATT_MTU_MAXIMUM;
+import static com.polidea.rxandroidble3.RxBleConnection.GATT_MTU_MINIMUM;
+import static com.polidea.rxandroidble3.RxBleConnection.GATT_WRITE_MTU_OVERHEAD;
 
 public class FirmwareOperations {
     private byte[] fw;
