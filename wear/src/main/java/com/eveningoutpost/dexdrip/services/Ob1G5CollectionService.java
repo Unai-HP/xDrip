@@ -224,7 +224,7 @@ public class Ob1G5CollectionService extends G5BaseService {
 
     public static boolean keep_running = true;
 
-    public static boolean android_wear = false;
+    public static boolean android_wear = true;
     public static boolean wear_broadcast = false;
 
     private static volatile Disposable scanSubscription;
@@ -419,9 +419,9 @@ public class Ob1G5CollectionService extends G5BaseService {
 //                                    resetState();
 //                                }
 //                            } else {
-//                                if (!Ob1G5StateMachine.doCheckAuth(this, connection)) {
-//                                    resetState();
-//                                }
+                                if (!Ob1G5StateMachine.doCheckAuth(this, connection)) {
+                                    resetState();
+                                }
 //                            }
                             if (!Ob1G5StateMachine.doCheckAuth2(this, connection)) {
                                 resetState();
@@ -572,7 +572,8 @@ public class Ob1G5CollectionService extends G5BaseService {
         val TXID_PREF = "dex_txid";
         val txid = Pref.getString(TXID_PREF, "NULL");
         val txid_filtered = txid.trim();
-        transmitterID = txid_filtered;
+//        transmitterID = txid_filtered;
+        transmitterID = "838YGL";
         UserError.Log.d(TAG, "Transmitter id:"+transmitterID);
         if (!txid.equals(txid_filtered)) {
             Pref.setString(TXID_PREF, txid_filtered);
@@ -679,9 +680,11 @@ public class Ob1G5CollectionService extends G5BaseService {
                             .subscribe(
                                     rxBleScanResult -> {
                                         // Process scan result here.
+                                        Log.d(TAG, "stateSubscription Results: "+rxBleScanResult.name());
                                     },
                                     throwable -> {
                                         // Handle an error here.
+                                        Log.d(TAG, "stateSubscription Error: "+throwable);
                                     }
                             );
 
@@ -1531,7 +1534,10 @@ public class Ob1G5CollectionService extends G5BaseService {
 
 
     private void onServicesDiscovered(RxBleDeviceServices services) {
+        boolean d = true;
+        Log.d(TAG, "Start onServicesDiscovered: "+services);
         for (BluetoothGattService service : services.getBluetoothGattServices()) {
+            Log.d(TAG, "    For loop");
             if (d) UserError.Log.d(TAG, "Service: " + getUUIDName(service.getUuid()));
             if (service.getUuid().equals(BluetoothServices.CGMService)) {
                 if (d) UserError.Log.i(TAG, "Found CGM Service!");
@@ -1539,9 +1545,12 @@ public class Ob1G5CollectionService extends G5BaseService {
                     do_discovery = false;
                 }
 
-                if (txIdMatch(getTransmitterID()) && service.getCharacteristic(ExtraData) != null) {
+                if (true){
+//                        txIdMatch(getTransmitterID()) && service.getCharacteristic(ExtraData) != null) {
                     try {
                         plugin = Loader.getLocalInstance(Registry.get(KEKS), getTransmitterID());
+                        Log.d(TAG, "Plugin object is null? "+plugin);
+                        Log.d(TAG, "Plugin loaded.");
                         if (plugin == null) {
                             val msg = "Unable to load keks plugin - please re-enter transmitter id";
                             UserError.Log.wtf(TAG, msg);

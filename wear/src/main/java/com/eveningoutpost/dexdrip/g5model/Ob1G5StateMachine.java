@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Build;
 import android.os.PowerManager;
+import android.util.Log;
 
 import com.eveningoutpost.dexdrip.Home;
 import com.eveningoutpost.dexdrip.importedlibraries.usbserial.util.HexDump;
@@ -122,7 +123,7 @@ public class Ob1G5StateMachine {
     private static boolean speakSlowly = false; // slow down bluetooth comms for android wear etc
     private static int nextBackFillCheckSize = BACKFILL_CHECK_SMALL;
 
-    private static final boolean d = false;
+    private static final boolean d = true;
 
     private static volatile long lastGlucosePacket = 0;
     private static volatile long lastUsableGlucosePacket = 0;
@@ -155,7 +156,9 @@ public class Ob1G5StateMachine {
             speakSlowly = true;
             UserError.Log.d(TAG, "Setting speak slowly to true"); // WARN should be reactive or on named devices
         }
-        if (Build.VERSION.SDK_INT >= 23 && usingG6()) {
+        Log.d(TAG, "Using G6? "+usingG6());
+        if (true){
+//                Build.VERSION.SDK_INT >= 23 && usingG6()) {
             connection.setupIndication(Authentication)
                     // .timeout(10, TimeUnit.SECONDS)
                     .timeout(15, TimeUnit.SECONDS) // WARN
@@ -191,8 +194,10 @@ public class Ob1G5StateMachine {
 
 
     private static void doNext(final Ob1G5CollectionService parent, final RxBleConnection connection) {
+        Log.d(TAG, "Do doNext");
         try {
             val p = parent.plugin.aNext();
+            Log.d(TAG, "Do doNext. p: "+p);
             if (p == null) {
                 UserError.Log.d(TAG, "Null value returned via plugin");
                 if (shortTxId()) {
@@ -204,8 +209,10 @@ public class Ob1G5StateMachine {
             val cmd = p[0];
 
             if (p.length == 2) {
+                Log.d(TAG, "p length 2");
                 val data = p[1];
                 if (data != null) {
+                    Log.d(TAG, "Data not null");
                     connection.getCharacteristic(ExtraData)
                             .blockingGet().setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                     val len = data.length;
@@ -214,17 +221,32 @@ public class Ob1G5StateMachine {
                         val buf = new byte[size];
                         System.arraycopy(data, i, buf, 0, size);
                         UserError.Log.d(TAG, "Sending auth data: " + bytesToHex(buf));
-                        connection.writeCharacteristic(ExtraData, nn(buf)).subscribe();
+                        connection.writeCharacteristic(ExtraData, nn(buf)).subscribe(
+                                scanResult -> {
+                                    Log.e(TAG, "Result on doNext() subscribe. Result: "+scanResult.toString());
+                                },
+                                throwable -> {
+                                    Log.e(TAG, "Exception on doNext() subscribe. E: "+throwable.getMessage());
+                                }
+                        );
                         threadSleep(40);
                     }
                     // TODO wait for completion?
                     threadSleep(500);
                 }
                 if (cmd != null) {
+                    Log.d(TAG, "cmd not null");
                     UserError.Log.d(TAG, "Sending auth command: " + HexDump.dumpHexString(cmd));
                     connection.getCharacteristic(Authentication)
                             .blockingGet().setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-                    connection.writeCharacteristic(Authentication, nn(cmd)).subscribe();
+                    connection.writeCharacteristic(Authentication, nn(cmd)).subscribe(
+                            scanResult -> {
+                                // Process scan result here.
+                            },
+                            throwable -> {
+                                // Handle an error here.
+                            }
+                    );
                 }
             } else if (p.length == 1) {
                 if (cmd != null) {
@@ -269,6 +291,8 @@ public class Ob1G5StateMachine {
             UserError.Log.e(TAG, "Got exception in plugin: " + e);
             e.printStackTrace();
         }
+
+        Log.d(TAG, "Connecting to do auth(2).");
         connection.setupNotification(ExtraData)
                 .timeout(15, TimeUnit.SECONDS) // WARN
                 .doOnNext(notificationObservable -> {
@@ -327,7 +351,8 @@ public class Ob1G5StateMachine {
         lastAuthPacket = authRequest;
         UserError.Log.i(TAG, "AuthRequestTX: " + bytesToHex(authRequest.byteSequence));
 
-        connection.writeCharacteristic(Authentication, nn(authRequest.byteSequence))
+        connection
+                .writeCharacteristic(Authentication, nn(authRequest.byteSequence))
                 .subscribe(
                         characteristicValue -> {
                             // Characteristic value confirmed.
@@ -335,12 +360,15 @@ public class Ob1G5StateMachine {
                                 UserError.Log.d(TAG, "Wrote authrequest, got: " + bytesToHex(characteristicValue));
                             speakSlowly();
                             if ((msSince(lastAuthenticationStream) > 500) && !isTransmitterG6Rev2(getTransmitterID())) {
-                                connection.readCharacteristic(Authentication).subscribe(
-                                        readValue -> {
-                                            authenticationProcessor(parent, connection, readValue);
-                                        }, throwable -> {
-                                            UserError.Log.d(TAG, "Could not read after AuthRequestTX: " + throwable);
-                                        });
+                                connection
+                                        .readCharacteristic(Authentication)
+                                        .subscribe(
+                                            readValue -> {
+                                                authenticationProcessor(parent, connection, readValue);
+                                            }, throwable -> {
+                                                UserError.Log.d(TAG, "Could not read after AuthRequestTX: " + throwable);
+                                            }
+                                        );
                                 //parent.background_automata();
                             }
                         },

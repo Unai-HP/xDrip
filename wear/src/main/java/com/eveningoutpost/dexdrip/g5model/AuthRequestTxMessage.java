@@ -18,7 +18,6 @@ public class AuthRequestTxMessage extends BaseMessage {
     private static final byte endByteStd = 0x2;
     private static final byte endByteAlt = 0x1;
 
-
     public AuthRequestTxMessage(int token_size) {
         this(token_size, false);
     }
@@ -26,6 +25,7 @@ public class AuthRequestTxMessage extends BaseMessage {
     public AuthRequestTxMessage(int token_size, boolean alt) {
         this(token_size, alt ? endByteAlt : endByteStd);
     }
+
     public AuthRequestTxMessage(int token_size, int slot) {
         init(opcode, token_size + 2);
         final byte[] randomBytes = getRandomKey();
@@ -38,4 +38,3 @@ public class AuthRequestTxMessage extends BaseMessage {
         UserError.Log.d(TAG, "New AuthRequestTxMessage: " + JoH.bytesToHex(byteSequence));
     }
 }
-
