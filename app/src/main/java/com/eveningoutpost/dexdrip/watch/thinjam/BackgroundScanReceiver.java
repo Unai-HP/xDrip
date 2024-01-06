@@ -11,9 +11,9 @@ import com.eveningoutpost.dexdrip.models.UserError;
 import com.eveningoutpost.dexdrip.utilitymodels.RxBleProvider;
 import com.eveningoutpost.dexdrip.utils.bt.BtCallBack2;
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.exceptions.BleScanException;
-import com.polidea.rxandroidble2.scan.BackgroundScanner;
-import com.polidea.rxandroidble2.scan.ScanResult;
+import com.polidea.rxandroidble3.exceptions.BleScanException;
+import com.polidea.rxandroidble3.scan.BackgroundScanner;
+import com.polidea.rxandroidble3.scan.ScanResult;
 
 import java.util.List;
 import java.util.Map;

@@ -9,9 +9,9 @@ import com.eveningoutpost.dexdrip.utilitymodels.Inevitable;
 import com.eveningoutpost.dexdrip.utilitymodels.PersistentStore;
 import com.eveningoutpost.dexdrip.utils.bt.ScanMeister;
 import com.eveningoutpost.dexdrip.utils.bt.Subscription;
-import com.polidea.rxandroidble2.scan.ScanFilter;
-import com.polidea.rxandroidble2.scan.ScanResult;
-import com.polidea.rxandroidble2.scan.ScanSettings;
+import com.polidea.rxandroidble3.scan.ScanFilter;
+import com.polidea.rxandroidble3.scan.ScanResult;
+import com.polidea.rxandroidble3.scan.ScanSettings;
 
 import java.util.concurrent.TimeUnit;
 

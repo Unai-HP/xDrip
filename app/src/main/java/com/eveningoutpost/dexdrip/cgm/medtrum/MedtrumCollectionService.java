@@ -47,9 +47,9 @@ import com.eveningoutpost.dexdrip.utils.DisconnectReceiver;
 import com.eveningoutpost.dexdrip.utils.bt.Subscription;
 import com.eveningoutpost.dexdrip.utils.framework.WakeLockTrampoline;
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.RxBleClient;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleDevice;
+import com.polidea.rxandroidble3.RxBleClient;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.RxBleDevice;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;

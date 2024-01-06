@@ -34,10 +34,10 @@ import com.eveningoutpost.dexdrip.utils.time.SlidingWindowConstraint;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.polidea.rxandroidble2.RxBleDeviceServices;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
-import com.polidea.rxandroidble2.exceptions.BleGattCharacteristicException;
-import com.polidea.rxandroidble2.exceptions.BleGattException;
+import com.polidea.rxandroidble3.RxBleDeviceServices;
+import com.polidea.rxandroidble3.exceptions.BleDisconnectedException;
+import com.polidea.rxandroidble3.exceptions.BleGattCharacteristicException;
+import com.polidea.rxandroidble3.exceptions.BleGattException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -69,11 +69,13 @@ import android.preference.PreferenceManager;
 import androidx.annotation.NonNull;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
+import android.util.Log;
 
 import com.eveningoutpost.dexdrip.AddCalibration;
 import com.eveningoutpost.dexdrip.DoubleCalibrationActivity;
 import com.eveningoutpost.dexdrip.Home;
 import com.eveningoutpost.dexdrip.R;
+import com.eveningoutpost.dexdrip.cgm.carelinkfollow.message.User;
 import com.eveningoutpost.dexdrip.g5model.BatteryInfoRxMessage;
 import com.eveningoutpost.dexdrip.g5model.BluetoothServices;
 import com.eveningoutpost.dexdrip.g5model.CalibrationState;
@@ -113,18 +115,18 @@ import com.eveningoutpost.dexdrip.utils.framework.WakeLockTrampoline;
 import com.eveningoutpost.dexdrip.watch.thinjam.BlueJayEntry;
 import com.eveningoutpost.dexdrip.xdrip;
 import com.google.common.collect.Sets;
-import com.polidea.rxandroidble2.RxBleClient;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.RxBleCustomOperation;
-import com.polidea.rxandroidble2.RxBleDevice;
-import com.polidea.rxandroidble2.RxBleDeviceServices;
-import com.polidea.rxandroidble2.exceptions.BleGattCallbackTimeoutException;
-import com.polidea.rxandroidble2.exceptions.BleScanException;
-import com.polidea.rxandroidble2.internal.RxBleLog;
-import com.polidea.rxandroidble2.internal.connection.RxBleGattCallback;
-import com.polidea.rxandroidble2.scan.ScanFilter;
-import com.polidea.rxandroidble2.scan.ScanResult;
-import com.polidea.rxandroidble2.scan.ScanSettings;
+import com.polidea.rxandroidble3.RxBleClient;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.RxBleCustomOperation;
+import com.polidea.rxandroidble3.RxBleDevice;
+import com.polidea.rxandroidble3.RxBleDeviceServices;
+import com.polidea.rxandroidble3.exceptions.BleGattCallbackTimeoutException;
+import com.polidea.rxandroidble3.exceptions.BleScanException;
+import com.polidea.rxandroidble3.internal.RxBleLog;
+import com.polidea.rxandroidble3.internal.connection.RxBleGattCallback;
+import com.polidea.rxandroidble3.scan.ScanFilter;
+import com.polidea.rxandroidble3.scan.ScanResult;
+import com.polidea.rxandroidble3.scan.ScanSettings;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -321,6 +323,7 @@ public class Ob1G5CollectionService extends G5BaseService {
             last_automata_state = state;
             final PowerManager.WakeLock wl = JoH.getWakeLock("jam-g5-automata", 60000);
             try {
+                Log.d(TAG, "Automata state: "+state);
                 switch (state) {
 
                     case INIT:
@@ -349,6 +352,7 @@ public class Ob1G5CollectionService extends G5BaseService {
                         break;
                     case CONNECT_NOW:
                         if (specialPairingWorkaround()) {
+                            Log.d(TAG, "specialPairingWorkaround");
                             val locallyBonded = isDeviceLocallyBonded();
                             UserError.Log.d(TAG, "wasbonded = " + wasBonded + " local: " + locallyBonded);
                             if (wasBonded.equals(getTransmitterID()) && !locallyBonded && skippedConnects < 10) {
@@ -358,9 +362,11 @@ public class Ob1G5CollectionService extends G5BaseService {
                             } else {
                                 wasBonded = locallyBonded ? getTransmitterID() : "";
                                 skippedConnects = 0;
+                                Log.d(TAG, "specialPairingWorkaround: "+specialPairingWorkaround()+" getTrustAutoConnect: "+getTrustAutoConnect());
                                 connect_to_device(specialPairingWorkaround() && getTrustAutoConnect());
                             }
                         } else {
+                            Log.d(TAG, "no specialPairingWorkaround");
                             connect_to_device(false);
                         }
                         break;
@@ -539,6 +545,7 @@ public class Ob1G5CollectionService extends G5BaseService {
         val txid = Pref.getString(TXID_PREF, "NULL");
         val txid_filtered = txid.trim();
         transmitterID = txid_filtered;
+        UserError.Log.d(TAG, "Transmitter id:"+transmitterID);
         if (!txid.equals(txid_filtered)) {
             Pref.setString(TXID_PREF, txid_filtered);
             UserError.Log.wtf(TAG, "Had to fix invalid txid: :" + txid + ": -> :" + txid_filtered + ":");
@@ -626,8 +633,9 @@ public class Ob1G5CollectionService extends G5BaseService {
 
 
     private synchronized void connect_to_device(boolean auto) {
+        Log.d(TAG, "Connect to device.  MAC: "+transmitterMAC);
         if ((state == CONNECT) || (state == CONNECT_NOW)) {
-            // TODO check mac
+            Log.d(TAG, "    MAC: "+transmitterMAC);
             if (transmitterMAC == null) {
                 tryLoadingSavedMAC();
             }
@@ -642,6 +650,7 @@ public class Ob1G5CollectionService extends G5BaseService {
 
                 msg("Connect request");
                 if (state == CONNECT_NOW) {
+                    Log.d(TAG, "connection_linger: "+connection_linger);
                     if (connection_linger != null) JoH.releaseWakeLock(connection_linger);
                     connection_linger = JoH.getWakeLock("jam-g5-pconnect", 60000);
                 }
@@ -650,7 +659,9 @@ public class Ob1G5CollectionService extends G5BaseService {
                 stopConnect();
 
                 try {
+                    Log.d(TAG, "Connecting to device...");
                     bleDevice = rxBleClient.getBleDevice(localTransmitterMAC);
+                    Log.d(TAG, "    NAME: "+bleDevice.getName()+" MAC: "+bleDevice.getMacAddress()+" State: "+bleDevice.getConnectionState());
 
                     /// / Listen for connection state changes
                     stateSubscription = new Subscription(bleDevice.observeConnectionStateChanges()
@@ -660,6 +671,7 @@ public class Ob1G5CollectionService extends G5BaseService {
                             .subscribe(this::onConnectionStateChange, throwable -> {
                                 UserError.Log.wtf(TAG, "Got Error from state subscription: " + throwable);
                             }));
+                    Log.d(TAG, "    Is device disposed? "+stateSubscription.isDisposed());
 
                     last_connect_started = tsl();
                     // Attempt to establish a connection // TODO does this need different connection timeout for auto vs normal?
@@ -672,6 +684,7 @@ public class Ob1G5CollectionService extends G5BaseService {
                             .subscribeOn(Schedulers.io())
 
                             .subscribe(this::onConnectionReceived, this::onConnectionFailure));
+                    Log.d(TAG, "    connectionSubscription: "+connectionSubscription.toString());
                 } catch (IllegalArgumentException e) {
                     UserError.Log.e(TAG, "Caught IllegalArgument Exception: " + e + " retry on next run");
                     // TODO if this is due to concurrent access then changing state again may be a bad idea
@@ -790,13 +803,14 @@ public class Ob1G5CollectionService extends G5BaseService {
     private void tryLoadingSavedMAC() {
         if ((transmitterMAC == null) || (!transmitterIDmatchingMAC.equals(transmitterID))) {
             if (transmitterID != null) {
+                Log.d(TAG, "OB1G5_MACSTORE: " + PersistentStore.getString(OB1G5_MACSTORE) + "TransmitterID: " + PersistentStore.getString(transmitterID) + "Both: " + PersistentStore.getString(OB1G5_MACSTORE + transmitterID));
                 final String this_mac = PersistentStore.getString(OB1G5_MACSTORE + transmitterID);
                 if (this_mac.length() == 17) {
                     UserError.Log.d(TAG, "Loaded stored MAC for: " + transmitterID + " " + this_mac);
                     transmitterMAC = this_mac;
                     transmitterIDmatchingMAC = transmitterID;
                 } else {
-                    UserError.Log.d(TAG, "Did not find any saved MAC for: " + transmitterID);
+                    UserError.Log.d(TAG, "Did not find any saved MAC for: " + transmitterID + " MAC: " + this_mac);
                 }
             } else {
                 UserError.Log.e(TAG, "Could not load saved mac as transmitter id isn't set!");
@@ -837,8 +851,11 @@ public class Ob1G5CollectionService extends G5BaseService {
     }
 
     public static synchronized boolean isDeviceLocallyBonded() {
+        Log.d(TAG, "isDeviceLocallyBonded");
         if (transmitterMAC == null) return false;
+        Log.d(TAG, "    transmitterMAC not null");
         final Set<RxBleDevice> pairedDevices = rxBleClient.getBondedDevices();
+        Log.d(TAG, "    getting bonded devices");
         if ((pairedDevices != null) && (pairedDevices.size() > 0)) {
             for (RxBleDevice device : pairedDevices) {
                 if ((device.getMacAddress() != null) && (device.getMacAddress().equals(transmitterMAC))) {
@@ -1219,11 +1236,13 @@ public class Ob1G5CollectionService extends G5BaseService {
 
     // Successful result from our bluetooth scan
     private synchronized void onScanResult(final ScanResult bleScanResult) {
+        UserError.Log.d(TAG, "onScanResults...");
         // TODO MIN RSSI
         final int this_rssi = bleScanResult.getRssi();
         final String this_name = bleScanResult.getBleDevice().getName();
         final String this_address = bleScanResult.getBleDevice().getMacAddress();
         final String search_name = getTransmitterBluetoothName();
+        Log.d(TAG, "Bluetooth Scan Result.  RSSI: "+this_rssi+" Name: "+this_name+" Address: "+this_address+"SearchName: "+search_name);
         val mdata = bleScanResult.getScanRecord().getManufacturerSpecificData(0xD << 4);
         if (isScanMatch(this_address, historicalTransmitterMAC, this_name, search_name)) {
             stopScan(); // we got one!
@@ -1446,6 +1465,7 @@ public class Ob1G5CollectionService extends G5BaseService {
     }
 
     private synchronized void onConnectionStateChange(RxBleConnection.RxBleConnectionState newState) {
+        Log.d(TAG, "onConnectionStateChange newState: "+newState);
         String connection_state = "Unknown";
         switch (newState) {
             case CONNECTING:

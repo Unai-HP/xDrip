@@ -6,7 +6,7 @@ package com.eveningoutpost.dexdrip.utilitymodels;
 
 import com.eveningoutpost.dexdrip.models.UserError;
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.RxBleClient;
+import com.polidea.rxandroidble3.RxBleClient;
 
 import java.util.concurrent.ConcurrentHashMap;
 

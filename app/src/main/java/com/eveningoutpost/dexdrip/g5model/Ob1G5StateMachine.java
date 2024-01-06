@@ -34,10 +34,10 @@ import com.eveningoutpost.dexdrip.utils.bt.Mimeograph;
 import com.eveningoutpost.dexdrip.wearintegration.WatchUpdaterService;
 import com.eveningoutpost.dexdrip.xdrip;
 import com.google.gson.reflect.TypeToken;
-import com.polidea.rxandroidble2.RxBleConnection;
-import com.polidea.rxandroidble2.exceptions.BleCannotSetCharacteristicNotificationException;
-import com.polidea.rxandroidble2.exceptions.BleDisconnectedException;
-import com.polidea.rxandroidble2.exceptions.BleGattCharacteristicException;
+import com.polidea.rxandroidble3.RxBleConnection;
+import com.polidea.rxandroidble3.exceptions.BleCannotSetCharacteristicNotificationException;
+import com.polidea.rxandroidble3.exceptions.BleDisconnectedException;
+import com.polidea.rxandroidble3.exceptions.BleGattCharacteristicException;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
