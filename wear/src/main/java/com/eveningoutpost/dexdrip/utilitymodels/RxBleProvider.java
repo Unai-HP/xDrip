@@ -5,7 +5,7 @@ package com.eveningoutpost.dexdrip.utilitymodels;
 // TODO check this reference handling
 
 import com.eveningoutpost.dexdrip.xdrip;
-import com.polidea.rxandroidble2.RxBleClient;
+import com.polidea.rxandroidble3.RxBleClient;
 
 import java.util.concurrent.ConcurrentHashMap;
 

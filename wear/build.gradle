@@ -136,7 +136,14 @@ dependencies {
         annotationProcessor 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
     }
 
+    implementation project(':libkeks')
+
+    implementation 'com.squareup.okhttp:okhttp:2.7.5'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.13'
+
     implementation 'uk.com.robust-it:cloning:1.9.5'
+    implementation "com.polidea.rxandroidble3:rxandroidble:1.17.2"
     // you will want to install the android studio lombok plugin
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor "org.projectlombok:lombok"

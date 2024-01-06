@@ -3,6 +3,8 @@ package com.eveningoutpost.dexdrip;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import androidx.annotation.StringRes;
@@ -15,10 +17,13 @@ import com.eveningoutpost.dexdrip.models.LibreBlock;
 import com.eveningoutpost.dexdrip.models.LibreData;
 import com.eveningoutpost.dexdrip.models.Sensor;
 import com.eveningoutpost.dexdrip.utilitymodels.PlusAsyncExecutor;
+import com.eveningoutpost.dexdrip.utilitymodels.Pref;
 import com.eveningoutpost.dexdrip.utilitymodels.VersionTracker;
 
 
 import static com.eveningoutpost.dexdrip.utils.VersionFixer.disableUpdates;
+
+import java.util.Locale;
 
 
 /**
@@ -33,6 +38,7 @@ public class xdrip extends Application {
     public static PlusAsyncExecutor executor;
     private static boolean fabricInited = false;
     private static Boolean isRunningTestCache;
+    private static Locale LOCALE;
 
     @Override
     public void onCreate() {
@@ -56,6 +62,26 @@ public class xdrip extends Application {
 
     }
 
+    public static Context getLangContext(Context context) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && Pref.getBooleanDefaultFalse("force_english")) {
+                final String forced_language = Pref.getString("forced_language", "en");
+                final Configuration config = context.getResources().getConfiguration();
+
+                if (LOCALE == null) LOCALE = new Locale(forced_language);
+                Locale.setDefault(LOCALE);
+                config.setLocale(LOCALE);
+                context = context.createConfigurationContext(config);
+                //Log.d(TAG, "Sending language context for: " + LOCALE);
+                return new ContextWrapper(context);
+            } else {
+                return context;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Got exception in getLangContext: " + e);
+            return context;
+        }
+    }
 
     public static Context getAppContext() {
         return xdrip.context;

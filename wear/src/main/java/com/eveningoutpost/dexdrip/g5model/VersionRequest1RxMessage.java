@@ -11,6 +11,7 @@ import java.util.Locale;
 public class VersionRequest1RxMessage extends BaseMessage {
 
     public static final byte opcode = 0x4B;
+    public static final byte opcode2 = 0x4A;
 
     public int status;
     public String firmware_version_string;
@@ -19,6 +20,7 @@ public class VersionRequest1RxMessage extends BaseMessage {
     public int inactive_days;
     public int max_inactive_days;
     public int max_runtime_days;
+    public long serial;
 
 
     public VersionRequest1RxMessage(byte[] packet) {

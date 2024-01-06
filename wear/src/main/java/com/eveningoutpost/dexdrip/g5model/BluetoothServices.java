@@ -14,6 +14,8 @@ public class BluetoothServices {
     public static final UUID DeviceInfo = UUID.fromString("0000180A-0000-1000-8000-00805F9B34FB");
     //iOS uses FEBC?
     public static final UUID Advertisement = UUID.fromString("0000FEBC-0000-1000-8000-00805F9B34FB");
+
+    public static final UUID Mask16 = UUID.fromString("0000FFFF-0000-0000-0000-000000000000");
     public static final UUID CGMService = UUID.fromString("F8083532-849E-531C-C594-30F1F86A4EA5");
     public static final UUID ServiceB = UUID.fromString("F8084532-849E-531C-C594-30F1F86A4EA5");
 
@@ -22,6 +24,9 @@ public class BluetoothServices {
 
     //CGMServiceCharacteristicUUID
     public static final UUID Communication = UUID.fromString("F8083533-849E-531C-C594-30F1F86A4EA5");
+
+
+    public static final UUID ExtraData = UUID.fromString("F8083538-849E-531C-C594-30F1F86A4EA5");
     public static final UUID Control = UUID.fromString("F8083534-849E-531C-C594-30F1F86A4EA5");
     public static final UUID Authentication = UUID.fromString("F8083535-849E-531C-C594-30F1F86A4EA5");
     public static final UUID ProbablyBackfill = UUID.fromString("F8083536-849E-531C-C594-30F1F86A4EA5");
