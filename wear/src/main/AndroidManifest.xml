@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
+
+<!--    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"-->
+<!--        android:usesPermissionFlags="neverForLocation" />-->
+
     <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED" />
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
     <uses-permission android:name="android.permission.INSTALL_PACKAGES" />
@@ -24,7 +28,10 @@
     <!-- Declaration that this app is usable on phones with Bluetooth Low Energy. -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
-        android:required="false" />
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:node="replace" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="replace" />
 
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" />

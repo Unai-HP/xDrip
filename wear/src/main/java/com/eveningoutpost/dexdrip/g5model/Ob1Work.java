@@ -19,6 +19,9 @@ public class Ob1Work {
     @Expose
     public final long timestamp;
     public volatile int retry = 0;
+    public volatile boolean dontRetry = false;
+    public volatile Runnable preWriteCallback;
+    public volatile Runnable postWriteCallback;
 
     Ob1Work(BaseMessage msg, String text) {
         this.msg = msg;
@@ -30,4 +33,25 @@ public class Ob1Work {
         return streamClasses.contains(msg.getClass());
     }
 
+    public Ob1Work setDontRetry() {
+        this.dontRetry = true;
+        return this;
+    }
+
+    public Ob1Work setPreWrite(final Runnable callback) {
+        this.preWriteCallback = callback;
+        return this;
+    }
+
+    public void preWrite() {
+        if (preWriteCallback != null) {
+            preWriteCallback.run();
+        }
+    }
+
+    public void postWrite() {
+        if (postWriteCallback != null) {
+            postWriteCallback.run();
+        }
+    }
 }

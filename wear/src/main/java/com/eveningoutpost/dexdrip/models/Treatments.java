@@ -8,6 +8,8 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.provider.BaseColumns;
 
+import androidx.annotation.Nullable;
+
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
@@ -35,6 +37,9 @@ import java.util.UUID;
 public class Treatments extends Model {
     private final static String TAG = "jamorham " + Treatments.class.getSimpleName();
     public final static String XDRIP_TAG = "xdrip";
+
+    public static final String SENSOR_STOP_EVENT_TYPE = "Sensor Stop";
+
     public static double activityMultipler = 8.4; // somewhere between 8.2 and 8.8
     private static Treatments lastCarbs;
     private static boolean patched = false;
@@ -198,6 +203,25 @@ public class Treatments extends Model {
         Treatment.save();
         pushTreatmentSync(Treatment);
         return Treatment;
+    }
+
+    public static synchronized Treatments sensorStop(@Nullable Long timestamp, @Nullable String notes) {
+        if (timestamp == null || timestamp == 0) {
+            timestamp = new Date().getTime();
+        }
+
+        final Treatments treatment = new Treatments();
+        treatment.enteredBy = XDRIP_TAG;
+        treatment.eventType = SENSOR_STOP_EVENT_TYPE;
+        treatment.created_at = DateUtil.toISOString(timestamp);
+        treatment.timestamp = timestamp;
+        treatment.uuid = UUID.randomUUID().toString();
+        if (notes != null && notes.length() > 0) {
+            treatment.notes = notes;
+        }
+        treatment.save();
+        pushTreatmentSync(treatment);
+        return treatment;
     }
 
     private static void pushTreatmentSync(Treatments treatment) {

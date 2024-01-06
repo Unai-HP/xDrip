@@ -1,5 +1,6 @@
 package com.eveningoutpost.dexdrip;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -22,6 +23,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.eveningoutpost.dexdrip.models.JoH;
 import com.eveningoutpost.dexdrip.models.UserError;
+import com.eveningoutpost.dexdrip.utilitymodels.Inevitable;
+import com.eveningoutpost.dexdrip.utilitymodels.Intents;
 import com.eveningoutpost.dexdrip.utilitymodels.Pref;
 import com.eveningoutpost.dexdrip.utils.DexCollectionType;
 import com.ustwo.clockwise.common.WatchMode;
@@ -40,6 +43,13 @@ public class Home extends BaseWatchFace {
     private static boolean is_follower_set = false;
     private long chartTapTime = 0l;
     private long fontsizeTapTime = 0l;
+    private static boolean reset_viewport = false;
+    public static boolean activityVisible = false;
+    private static Activity mActivity;
+
+    public static void staticRefreshBGChartsOnIdle() {
+        Inevitable.task("refresh-home-charts", 1000, () -> staticRefreshBGCharts(false));
+    }
 
     @Override
     public void onCreate() {
@@ -425,6 +435,18 @@ public class Home extends BaseWatchFace {
     }
 
     public static void staticRefreshBGCharts() {
+        staticRefreshBGCharts(false);
+    }
+
+
+    public static void staticRefreshBGCharts(boolean override) {
+        reset_viewport = true;
+        if (activityVisible || override) {
+            Intent updateIntent = new Intent(Intents.ACTION_NEW_BG_ESTIMATE_NO_DATA);
+            if (mActivity != null) {
+                mActivity.sendBroadcast(updateIntent);
+            }
+        }
     }
 }
 

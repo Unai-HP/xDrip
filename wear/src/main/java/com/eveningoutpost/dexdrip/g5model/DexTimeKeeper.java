@@ -1,8 +1,12 @@
 package com.eveningoutpost.dexdrip.g5model;
 
+import static com.eveningoutpost.dexdrip.services.Ob1G5CollectionService.getTransmitterID;
+
 import com.eveningoutpost.dexdrip.models.JoH;
 import com.eveningoutpost.dexdrip.models.UserError;
 import com.eveningoutpost.dexdrip.utilitymodels.PersistentStore;
+
+import lombok.val;
 
 /**
  * Created by jamorham on 25/11/2016.
@@ -25,14 +29,18 @@ public class DexTimeKeeper {
     // update the activation time stored for a transmitter
     public static void updateAge(final String transmitterId, final int dexTimeStamp, final boolean absolute) {
 
-        if ((transmitterId == null) || (transmitterId.length() != 6)) {
+        if ((transmitterId == null) || (transmitterId.length() != 6 && transmitterId.length() != 17 && transmitterId.length() != 4)) {
             UserError.Log.e(TAG, "Invalid dex transmitter in updateAge: " + transmitterId);
             return;
         }
         if (dexTimeStamp < 1) {
             UserError.Log.e(TAG, "Invalid dex timestamp in updateAge: " + dexTimeStamp);
             if (dexTimeStamp == 0 && absolute) {
-                DexResetHelper.offer("Your transmitter clock has stopped or never started. Do you want to hard reset it?");
+                if (FirmwareCapability.isTransmitterStandardFirefly(getTransmitterID())) { // Firefly, which cannot be hard reset
+                    UserError.Log.e(TAG, "Your transmitter clock has stopped or never started.");
+                } else {
+                    DexResetHelper.offer("Your transmitter clock has stopped or never started. Do you want to hard reset it?");
+                }
             }
             return;
         }
@@ -51,7 +59,7 @@ public class DexTimeKeeper {
 
     public static int getDexTime(String transmitterId, long timestamp) {
 
-        if ((transmitterId == null) || (transmitterId.length() != 6)) {
+        if ((transmitterId == null) || (transmitterId.length() != 6 && transmitterId.length() != 4 && transmitterId.length() != 17)) {
             UserError.Log.e(TAG, "Invalid dex transmitter in getDexTime: " + transmitterId);
             return -3;
         }
@@ -84,7 +92,7 @@ public class DexTimeKeeper {
 
 
     public static long fromDexTime(String transmitterId, int dexTimeStamp) {
-        if ((transmitterId == null) || (transmitterId.length() != 6)) {
+        if ((transmitterId == null) || (transmitterId.length() != 6 && transmitterId.length() != 4)) {
             UserError.Log.e(TAG, "Invalid dex transmitter in fromDexTime: " + transmitterId);
             return -3;
         }
@@ -108,6 +116,9 @@ public class DexTimeKeeper {
         final int valid_time = getDexTime(transmitterId, JoH.tsl());
         return (valid_time >= 0) ? valid_time / 86400 : -1;
     }
+
+    private static final int ABSOLUTE_MAX_AGE_DAYS = 180;
+    public static final int MAX_AGE_DAYS = 100;
 
     public static String extractForStream(String transmitterId) {
         if (transmitterId == null || transmitterId.length() == 0) return null;

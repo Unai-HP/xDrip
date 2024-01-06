@@ -5,7 +5,13 @@ package com.eveningoutpost.dexdrip.g5model;
 import com.eveningoutpost.dexdrip.utilitymodels.Constants;
 import com.google.common.collect.ImmutableSet;
 
+import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.getFirmwareXDetails;
 import static com.eveningoutpost.dexdrip.g5model.Ob1G5StateMachine.getRawFirmwareVersionString;
+import static com.eveningoutpost.dexdrip.models.JoH.emptyString;
+
+import androidx.arch.core.internal.FastSafeIterableMap;
+
+import lombok.val;
 
 public class FirmwareCapability {
 
@@ -15,6 +21,7 @@ public class FirmwareCapability {
     private static final ImmutableSet<String> KNOWN_G6_REV2_RAW_FIRMWARES = ImmutableSet.of("2.18.2.67");
     private static final ImmutableSet<String> KNOWN_G6_PLUS_FIRMWARES = ImmutableSet.of("2.4.2.88");
     private static final ImmutableSet<String> KNOWN_TIME_TRAVEL_TESTED = ImmutableSet.of("1.6.5.25");
+    private static final ImmutableSet<String> KNOWN_ALT_FIRMWARES = ImmutableSet.of("29.192.104.59", "32.192.104.82", "32.192.104.109", "32.192.105.64");
 
     // new G6 firmware versions will need to be added here / above
     static boolean isG6Firmware(final String version) {
@@ -37,6 +44,35 @@ public class FirmwareCapability {
 
     static boolean isG5Firmware(final String version) {
         return KNOWN_G5_FIRMWARES.contains(version);
+    }
+
+    public static boolean isTransmitterStandardFirefly(final String tx_id) { // Firefly that has not been modified
+        if (!isTransmitterModified(tx_id) && isTransmitterRawIncapable(tx_id)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isTransmitterRawIncapable(final String tx_id) {
+        val firmware_version = getRawFirmwareVersionString(tx_id);
+        return doWeHaveVersion(tx_id) && isKnownFirmware(firmware_version) && !isFirmwareRawCapable(firmware_version);
+    }
+
+    public static boolean doWeHaveVersion(final String tx_id) {
+        val firmware_version = getRawFirmwareVersionString(tx_id);
+        return !emptyString(firmware_version) && !firmware_version.equals("error");
+    }
+
+    public static boolean isTransmitterModified(final String tx_id) {
+        val vr1 = (VersionRequest1RxMessage) getFirmwareXDetails(tx_id, 1);
+        if (vr1 != null) {
+            return vr1.max_runtime_days >= 180;
+        }
+        return false;
+    }
+
+    public static boolean isFirmwareResistanceCapable(final String Version) {
+        return !isG6Rev2(Version) && !isG6Plus(Version);
     }
 
     static boolean isFirmwareTimeTravelCapable(final String version) {
@@ -110,5 +146,13 @@ public class FirmwareCapability {
 
     public static long getWarmupPeriod(final String tx_id) {
         return getWarmupPeriod(getRawFirmwareVersionString(tx_id));
+    }
+
+    public static boolean isDeviceG7(final String tx_id) {
+        return isG7Firmware(getRawFirmwareVersionString(tx_id));
+    }
+
+    static boolean isG7Firmware(final String version) {
+        return KNOWN_ALT_FIRMWARES.contains(version);
     }
 }
