@@ -278,4 +278,5 @@
     <string name="expires_days">{0, choice,0#Sensor Expired!|1#Ends in {0, number} day|1&lt;Ends in {0, number} days}</string>
     <string name="expires_at">Ends {0}</string>
     <string name="auto_starting_sensor">Auto starting sensor!</string>
+    <string name="yes">Yes</string>
 </resources>

@@ -337,8 +337,10 @@ public class Ob1G5CollectionService extends G5BaseService {
     }
 
     private static boolean specialPairingWorkaround() {
-        return Pref.getBooleanDefaultFalse("ob1_special_pairing_workaround");
+//        return Pref.getBooleanDefaultFalse("ob1_special_pairing_workaround");
+        return  true;
     }
+
 
     private static boolean getTrustAutoConnect() {
         return Pref.getBoolean("bluetooth_trust_autoconnect", true);
@@ -676,26 +678,14 @@ public class Ob1G5CollectionService extends G5BaseService {
                     bleDevice = rxBleClient.getBleDevice(localTransmitterMAC);
                     Log.d(TAG, "    NAME: "+bleDevice.getName()+" MAC: "+bleDevice.getMacAddress()+" State: "+bleDevice.getConnectionState());
 
-                    stateSubscription = rxBleClient.observeStateChanges()
-                            .subscribe(
-                                    rxBleScanResult -> {
-                                        // Process scan result here.
-                                        Log.d(TAG, "stateSubscription Results: "+rxBleScanResult.name());
-                                    },
-                                    throwable -> {
-                                        // Handle an error here.
-                                        Log.d(TAG, "stateSubscription Error: "+throwable);
-                                    }
-                            );
-
-
-                    /// / Listen for connection state changes
-                    Log.d(TAG, "    Is device disposed? "+stateSubscription.isDisposed());
 
                     last_connect_started = tsl();
-                    // Attempt to establish a connection // TODO does this need different connection timeout for auto vs normal?
+                    // Attempt to establish a connection
+                    // TODO does this need different connection timeout for auto vs normal?
+
                     UserError.Log.d(TAG, "Connecting with auto: " + auto);
-                    connectionSubscription = bleDevice.establishConnection(auto)
+                    connectionSubscription = bleDevice.establishConnection(true)
+//                            auto)
                             .subscribe(this::onConnectionReceived, this::onConnectionFailure);
                     Log.d(TAG, "    connectionSubscription: "+connectionSubscription.toString());
                 } catch (IllegalArgumentException e) {

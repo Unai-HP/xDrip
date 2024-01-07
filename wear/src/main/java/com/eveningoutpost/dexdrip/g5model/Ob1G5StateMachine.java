@@ -157,11 +157,10 @@ public class Ob1G5StateMachine {
             UserError.Log.d(TAG, "Setting speak slowly to true"); // WARN should be reactive or on named devices
         }
         Log.d(TAG, "Using G6? "+usingG6());
-        if (true){
-//                Build.VERSION.SDK_INT >= 23 && usingG6()) {
-            connection.setupIndication(Authentication)
+        if (Build.VERSION.SDK_INT >= 23 && usingG6()) {
+            connection.setupNotification(Authentication)
                     // .timeout(10, TimeUnit.SECONDS)
-                    .timeout(15, TimeUnit.SECONDS) // WARN
+//                    .timeout(15, TimeUnit.SECONDS) // WARN
                     // .observeOn(Schedulers.newThread()) // needed?
                     .doOnNext(notificationObservable -> handleAuthenticationWrite(parent, connection))
                     .flatMap(notificationObservable -> notificationObservable)
@@ -381,6 +380,7 @@ public class Ob1G5StateMachine {
     }
 
     private static void handleAuthenticationThrowable(final Throwable throwable, final Ob1G5CollectionService parent) {
+        Log.d(TAG, "handleAuthenticationThrowable type: "+throwable.getCause());
         if (!(throwable instanceof OperationSuccess)) {
             if (((parent.getState() == Ob1G5CollectionService.STATE.CLOSED)
                     || (parent.getState() == Ob1G5CollectionService.STATE.CLOSE))
